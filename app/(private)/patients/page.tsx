@@ -1,35 +1,54 @@
 'use client';
 
-import { ChevronRight, Plus } from 'lucide-react';
-import { useState } from 'react';
+import { ChevronRight, Loader2, PawPrint, Plus } from 'lucide-react';
+import { useCallback, useEffect, useState } from 'react';
 
 import { DataTable } from '@/app/components/data-table';
 import { Header } from '@/app/components/header';
 import { SectionCard } from '@/app/components/section-card';
 import { Button } from '@/components/ui/button';
+import { api } from '@/lib/api';
+import type { Patient, PaginatedMeta } from '@/lib/api';
+
+const SPECIE_LABELS: Record<string, string> = {
+  DOG: 'Cão',
+  CAT: 'Gato',
+  BIRD: 'Ave',
+  REPTILE: 'Réptil',
+  HORSE: 'Cavalo',
+  OTHER: 'Outro',
+};
 
 export default function PatientsPage() {
-  const INITIAL_PATIENTS = [
-    { id: 1, name: 'Thor', species: 'Cão', breed: 'Golden Retriever', owner: 'Ana Silva', phone: '(11) 99999-0001', examsCount: 5, lastExam: '25/10/2023', created: '2023-01-15', image: 'https://images.unsplash.com/photo-1552053831-71594a27632d?auto=format&fit=crop&w=150&q=80' },
-    { id: 2, name: 'Luna', species: 'Gato', breed: 'Siamês', owner: 'Carlos Souza', phone: '(11) 99999-0002', examsCount: 2, lastExam: '02/11/2023', created: '2023-05-20', image: 'https://images.unsplash.com/photo-1513245543132-31f507417b26?auto=format&fit=crop&w=150&q=80' },
-    { id: 3, name: 'Bob', species: 'Cão', breed: 'Bulldog', owner: 'Marcos Lima', phone: '(11) 99999-0003', examsCount: 0, lastExam: 'N/A', created: '2023-11-10', image: 'https://images.unsplash.com/photo-1583511655857-d19b40a7a54e?auto=format&fit=crop&w=150&q=80' },
-  ];
-  const [patients, setPatients] = useState(INITIAL_PATIENTS);
-  const [_searchTerm, setSearchTerm] = useState('');
+  const [patients, setPatients] = useState<Patient[]>([]);
+  const [meta, setMeta] = useState<PaginatedMeta | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
+
+  const fetchPatients = useCallback(async (searchQuery?: string, page = 1) => {
+    setLoading(true);
+    try {
+      const response = await api.patients.list({
+        page,
+        size: 10,
+        search: searchQuery,
+      });
+      setPatients(response.data);
+      setMeta(response.meta);
+    } catch {
+      // silently fail - user sees empty state
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void fetchPatients();
+  }, [fetchPatients]);
 
   const handleSearch = (value: string) => {
-    setSearchTerm(value);
-    if (value.trim() === '') {
-      setPatients(INITIAL_PATIENTS);
-    } else {
-      const filtered = INITIAL_PATIENTS.filter((patient) =>
-        patient.name.toLowerCase().includes(value.toLowerCase()) ||
-        patient.owner.toLowerCase().includes(value.toLowerCase()) ||
-        patient.species.toLowerCase().includes(value.toLowerCase()) ||
-        patient.breed.toLowerCase().includes(value.toLowerCase()),
-      );
-      setPatients(filtered);
-    }
+    setSearch(value);
+    void fetchPatients(value);
   };
 
   return (
@@ -39,7 +58,7 @@ export default function PatientsPage() {
 
         <SectionCard
           title="Pacientes cadastrados"
-          subtitle="Base completa de animais cadastrados."
+          subtitle={meta ? `${meta.total_elements} pacientes no total` : 'Carregando...'}
           headerAction={
             <Button className="bg-teal-600 dark:bg-teal-700 h-10 text-white hover:bg-teal-700 dark:hover:bg-teal-800">
               <Plus size={18} /> Novo Paciente
@@ -47,37 +66,55 @@ export default function PatientsPage() {
           }
         >
           <DataTable
-            headers={['Animal', 'Tutor', 'Qtd. Exames', 'Último Exame', '']}
+            headers={['Animal', 'Espécie', 'Raça', 'Cadastrado em', '']}
             showSearch={true}
             onSearch={handleSearch}
-            searchPlaceholder="Buscar por nome, tutor, espécie ou raça"
+            searchPlaceholder="Buscar por nome..."
           >
-            {patients.map((patient) => (
-              <tr
-                key={patient.id}
-                onClick={() => {}}
-                className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors cursor-pointer group"
-              >
-                <td className="p-4">
-                  <div className="flex items-center gap-3">
-                    <img src={patient.image} className="w-10 h-10 rounded-full object-cover" alt="" />
-                    <div>
-                      <p className="font-medium text-slate-900 dark:text-white">{patient.name}</p>
-                      <p className="text-xs text-slate-500 dark:text-slate-400">{patient.species} • {patient.breed}</p>
-                    </div>
-                  </div>
-                </td>
-                <td className="p-4">
-                  <p className="text-slate-900 dark:text-white">{patient.owner}</p>
-                  <p className="text-xs text-slate-500 dark:text-slate-400">{patient.phone}</p>
-                </td>
-                <td className="p-4 text-slate-600 dark:text-slate-300 pl-8">{patient.examsCount}</td>
-                <td className="p-4 text-slate-600 dark:text-slate-300">{patient.lastExam}</td>
-                <td className="p-4 text-right">
-                  <ChevronRight className="inline text-slate-300 group-hover:text-teal-600 dark:group-hover:text-teal-400 transition-colors" size={20} />
+            {loading ? (
+              <tr>
+                <td colSpan={5} className="p-8 text-center">
+                  <Loader2 size={24} className="animate-spin text-teal-600 mx-auto" />
                 </td>
               </tr>
-            ))}
+            ) : patients.length === 0 ? (
+              <tr>
+                <td colSpan={5} className="p-8 text-center">
+                  <PawPrint size={32} className="text-slate-300 dark:text-slate-600 mx-auto mb-2" />
+                  <p className="text-slate-500 dark:text-slate-400 text-sm">
+                    {search ? 'Nenhum paciente encontrado.' : 'Nenhum paciente cadastrado ainda.'}
+                  </p>
+                </td>
+              </tr>
+            ) : (
+              patients.map((patient) => (
+                <tr
+                  key={patient.id}
+                  className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors cursor-pointer group"
+                >
+                  <td className="p-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-teal-100 dark:bg-teal-900/40 flex items-center justify-center">
+                        <PawPrint size={18} className="text-teal-600 dark:text-teal-400" />
+                      </div>
+                      <p className="font-medium text-slate-900 dark:text-white">{patient.name}</p>
+                    </div>
+                  </td>
+                  <td className="p-4 text-slate-600 dark:text-slate-300">
+                    {SPECIE_LABELS[patient.specie] ?? patient.specie}
+                  </td>
+                  <td className="p-4 text-slate-600 dark:text-slate-300">
+                    {patient.breed ?? '-'}
+                  </td>
+                  <td className="p-4 text-slate-600 dark:text-slate-300">
+                    {new Date(patient.created_at).toLocaleDateString('pt-BR')}
+                  </td>
+                  <td className="p-4 text-right">
+                    <ChevronRight className="inline text-slate-300 group-hover:text-teal-600 dark:group-hover:text-teal-400 transition-colors" size={20} />
+                  </td>
+                </tr>
+              ))
+            )}
           </DataTable>
         </SectionCard>
       </div>

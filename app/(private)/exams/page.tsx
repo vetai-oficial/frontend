@@ -1,100 +1,54 @@
 'use client';
 
-import { Eye, Plus, Share2, Trash2 } from 'lucide-react';
-import { useState } from 'react';
+import { Eye, Loader2, Microscope, Plus, UploadIcon } from 'lucide-react';
+import Link from 'next/link';
+import { useCallback, useEffect, useState } from 'react';
 
+import { Badge } from '@/app/components/badge';
 import { DataTable } from '@/app/components/data-table';
 import { Header } from '@/app/components/header';
 import { SectionCard } from '@/app/components/section-card';
 import { Button } from '@/components/ui/button';
+import { api } from '@/lib/api';
+import type { Study, PaginatedMeta } from '@/lib/api';
 
-interface Exam {
-  id: string;
-  nome: string;
-  paciente: string;
-  tutor: string;
-  tipo: string;
-  data: string;
-}
+const STATUS_MAP: Record<string, { label: string; color: 'green' | 'yellow' | 'red' | 'blue' }> = {
+  COMPLETED: { label: 'Concluído', color: 'green' },
+  PROCESSING: { label: 'Processando', color: 'blue' },
+  PENDING: { label: 'Pendente', color: 'yellow' },
+  FAILED: { label: 'Falhou', color: 'red' },
+};
 
-const examsData: Exam[] = [
-  {
-    id: '1',
-    nome: 'Hemograma Completo',
-    paciente: 'Rex',
-    tutor: 'Ana Silva',
-    tipo: 'Hematologia',
-    data: '25/11/2025',
-  },
-  {
-    id: '2',
-    nome: 'Raio-X Tórax',
-    paciente: 'Luna',
-    tutor: 'Carlos Souza',
-    tipo: 'Radiologia',
-    data: '23/11/2025',
-  },
-  {
-    id: '3',
-    nome: 'Ultrassom Abdominal',
-    paciente: 'Max',
-    tutor: 'Marcos Lima',
-    tipo: 'Ultrassonografia',
-    data: '20/11/2025',
-  },
-  {
-    id: '4',
-    nome: 'Exame de Urina',
-    paciente: 'Bella',
-    tutor: 'Juliana Costa',
-    tipo: 'Análises Clínicas',
-    data: '18/11/2025',
-  },
-  {
-    id: '5',
-    nome: 'Eletrocardiograma',
-    paciente: 'Thor',
-    tutor: 'Pedro Santos',
-    tipo: 'Cardiologia',
-    data: '15/11/2025',
-  },
-];
+export default function ExamsPage() {
+  const [studies, setStudies] = useState<Study[]>([]);
+  const [meta, setMeta] = useState<PaginatedMeta | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
 
-export default function Exams() {
-  const [exams, setExams] = useState(examsData);
+  const fetchStudies = useCallback(async (searchQuery?: string, page = 1) => {
+    setLoading(true);
+    try {
+      const response = await api.studies.list({
+        page,
+        size: 10,
+        search: searchQuery,
+      });
+      setStudies(response.data);
+      setMeta(response.meta);
+    } catch {
+      // silently fail
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void fetchStudies();
+  }, [fetchStudies]);
 
   const handleSearch = (value: string) => {
-    if (value.trim() === '') {
-      setExams(examsData);
-    } else {
-      const filtered = examsData.filter(
-        (exam) =>
-          exam.nome.toLowerCase().includes(value.toLowerCase()) ||
-          exam.paciente.toLowerCase().includes(value.toLowerCase()) ||
-          exam.tutor.toLowerCase().includes(value.toLowerCase()) ||
-          exam.tipo.toLowerCase().includes(value.toLowerCase()),
-      );
-      setExams(filtered);
-    }
-  };
-
-  const handleView = (id: string) => {
-    // Implementar navegação para detalhes
-    void id;
-  };
-
-  const handleShare = (id: string) => {
-    // Implementar funcionalidade de compartilhamento
-    void id;
-  };
-
-  const handleDelete = (id: string) => {
-    // Implementar funcionalidade de exclusão
-    void id;
-  };
-
-  const handleAddExam = () => {
-    // Implementar funcionalidade de adicionar novo exame
+    setSearch(value);
+    void fetchStudies(value);
   };
 
   return (
@@ -104,72 +58,67 @@ export default function Exams() {
 
         <SectionCard
           title="Lista de exames"
-          subtitle="Gerencie todos os exames cadastrados"
+          subtitle={meta ? `${meta.total_elements} exames no total` : 'Carregando...'}
           headerAction={
-            <Button className="bg-teal-600 dark:bg-teal-700 h-10 text-white hover:bg-teal-700 dark:hover:bg-teal-800" onClick={handleAddExam}>
-              <Plus className="h-4 w-4" />
-              Novo Exame
+            <Button className="bg-teal-600 dark:bg-teal-700 h-10 text-white hover:bg-teal-700 dark:hover:bg-teal-800">
+              <UploadIcon size={18} /> Enviar Exame
             </Button>
           }
         >
           <DataTable
-            headers={['Nome', 'Tutor', 'Paciente', 'Tipo', 'Data', 'Ações']}
-            columnWidths={['25%', '20%', '10%', '15%', '12%', '13%']}
+            headers={['Título', 'Paciente', 'Status', 'Data', 'Ações']}
             showSearch={true}
             onSearch={handleSearch}
             searchPlaceholder="Buscar exames..."
-            centerHeaders={true}
           >
-            {exams.map((exam) => (
-              <tr
-                key={exam.id}
-                className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
-              >
-                <td className="p-4 text-slate-900 dark:text-white font-medium text-center">
-                  {exam.nome}
-                </td>
-                <td className="p-4 text-slate-600 dark:text-slate-300 text-center">
-                  {exam.tutor}
-                </td>
-                <td className="p-4 text-slate-600 dark:text-slate-300 text-center">
-                  {exam.paciente}
-                </td>
-                <td className="p-4 text-slate-600 dark:text-slate-300 text-center">
-                  {exam.tipo}
-                </td>
-                <td className="p-4 text-slate-600 dark:text-slate-300 text-center">
-                  {exam.data}
-                </td>
-                <td className="p-4 text-center">
-                  <div className="flex justify-center gap-2">
-                    <Button
-                      variant="ghost"
-                      size="icon-sm"
-                      onClick={() => handleView(exam.id)}
-                      title="Visualizar detalhes"
-                    >
-                      <Eye className="h-4 w-4 text-slate-600 dark:text-slate-300" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon-sm"
-                      onClick={() => handleShare(exam.id)}
-                      title="Compartilhar"
-                    >
-                      <Share2 className="h-4 w-4 text-slate-600 dark:text-slate-300" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon-sm"
-                      onClick={() => handleDelete(exam.id)}
-                      title="Deletar"
-                    >
-                      <Trash2 className="h-4 w-4 text-red-600 dark:text-red-400" />
-                    </Button>
-                  </div>
+            {loading ? (
+              <tr>
+                <td colSpan={5} className="p-8 text-center">
+                  <Loader2 size={24} className="animate-spin text-teal-600 mx-auto" />
                 </td>
               </tr>
-            ))}
+            ) : studies.length === 0 ? (
+              <tr>
+                <td colSpan={5} className="p-8 text-center">
+                  <Microscope size={32} className="text-slate-300 dark:text-slate-600 mx-auto mb-2" />
+                  <p className="text-slate-500 dark:text-slate-400 text-sm">
+                    {search ? 'Nenhum exame encontrado.' : 'Nenhum exame cadastrado ainda.'}
+                  </p>
+                </td>
+              </tr>
+            ) : (
+              studies.map((study) => {
+                const statusInfo = STATUS_MAP[study.status] ?? { label: study.status, color: 'yellow' as const };
+                return (
+                  <tr
+                    key={study.id}
+                    className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
+                  >
+                    <td className="p-4 text-slate-900 dark:text-white font-medium">
+                      {study.title ?? 'Sem título'}
+                    </td>
+                    <td className="p-4 text-slate-600 dark:text-slate-300">
+                      {study.patient?.name ?? '-'}
+                    </td>
+                    <td className="p-4">
+                      <Badge color={statusInfo.color}>{statusInfo.label}</Badge>
+                    </td>
+                    <td className="p-4 text-slate-600 dark:text-slate-300">
+                      {study.examDate
+                        ? new Date(study.examDate).toLocaleDateString('pt-BR')
+                        : new Date(study.created_at).toLocaleDateString('pt-BR')}
+                    </td>
+                    <td className="p-4">
+                      <Link href={`/exams/detail?id=${study.id}`}>
+                        <Button variant="ghost" size="icon-sm" title="Ver detalhes">
+                          <Eye size={16} className="text-slate-600 dark:text-slate-300" />
+                        </Button>
+                      </Link>
+                    </td>
+                  </tr>
+                );
+              })
+            )}
           </DataTable>
         </SectionCard>
       </div>

@@ -13,12 +13,21 @@ import {
   X,
 } from 'lucide-react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useState } from 'react';
+
+import { removeToken } from '@/lib/api';
 
 export function Sidebar() {
   const pathname = usePathname();
+  const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
+
+  function handleLogout() {
+    removeToken();
+    localStorage.removeItem('vetai_user');
+    router.push('/login');
+  }
 
   const menuItems = [
     { href: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
@@ -82,7 +91,7 @@ export function Sidebar() {
           })}
         </nav>
         <div className="p-4 border-t border-slate-200 dark:border-slate-800">
-          <button onClick={() => {}} className="flex items-center gap-3 px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg w-full">
+          <button onClick={handleLogout} className="flex items-center gap-3 px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg w-full">
             <LogOut size={18} /> Sair
           </button>
         </div>

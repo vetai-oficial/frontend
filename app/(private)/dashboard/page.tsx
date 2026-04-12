@@ -1,6 +1,7 @@
 'use client';
-import { UploadIcon } from 'lucide-react';
-import { useState } from 'react';
+
+import { Loader2, Microscope, PawPrint, UploadIcon } from 'lucide-react';
+import { useCallback, useEffect, useState } from 'react';
 
 import { Badge } from '@/app/components/badge';
 import { Card } from '@/app/components/card';
@@ -9,35 +10,47 @@ import { Header } from '@/app/components/header';
 import { SectionCard } from '@/app/components/section-card';
 import { StatCard } from '@/app/components/stat-card';
 import { Button } from '@/components/ui/button';
+import { api } from '@/lib/api';
+import type { Patient, Study } from '@/lib/api';
+
+const STATUS_MAP: Record<string, { label: string; color: 'green' | 'yellow' | 'red' | 'blue' }> = {
+  COMPLETED: { label: 'Concluído', color: 'green' },
+  PROCESSING: { label: 'Processando', color: 'blue' },
+  PENDING: { label: 'Pendente', color: 'yellow' },
+  FAILED: { label: 'Falhou', color: 'red' },
+};
 
 export default function Dashboard() {
-  const INITIAL_PATIENTS = [
-    { id: 1, name: 'Thor', species: 'Cão', breed: 'Golden Retriever', owner: 'Ana Silva', phone: '(11) 99999-0001', examsCount: 5, lastExam: '2023-10-25', created: '2023-01-15', image: 'https://images.unsplash.com/photo-1552053831-71594a27632d?auto=format&fit=crop&w=150&q=80' },
-    { id: 2, name: 'Luna', species: 'Gato', breed: 'Siamês', owner: 'Carlos Souza', phone: '(11) 99999-0002', examsCount: 2, lastExam: '2023-11-02', created: '2023-05-20', image: 'https://images.unsplash.com/photo-1513245543132-31f507417b26?auto=format&fit=crop&w=150&q=80' },
-    { id: 3, name: 'Bob', species: 'Cão', breed: 'Bulldog', owner: 'Marcos Lima', phone: '(11) 99999-0003', examsCount: 0, lastExam: '-', created: '2023-11-10', image: 'https://images.unsplash.com/photo-1583511655857-d19b40a7a54e?auto=format&fit=crop&w=150&q=80' },
-  ];
+  const [patients, setPatients] = useState<Patient[]>([]);
+  const [studies, setStudies] = useState<Study[]>([]);
+  const [totalPatients, setTotalPatients] = useState(0);
+  const [totalStudies, setTotalStudies] = useState(0);
+  const [loading, setLoading] = useState(true);
 
-  const INITIAL_EXAMS = [
-    { id: 101, patientId: 1, type: 'Hemograma Completo', date: '2023-10-25', status: 'Concluído', notes: 'Leucócitos levemente aumentados.', images: [] },
-    { id: 102, patientId: 1, type: 'Raio-X Torax', date: '2023-09-10', status: 'Concluído', notes: 'Sem alterações visíveis.', images: ['https://images.unsplash.com/photo-1530497610245-94d3c16cda28?auto=format&fit=crop&w=300&q=80'] },
-    { id: 103, patientId: 2, type: 'Ultrassom Abdominal', date: '2023-11-02', status: 'Análise', notes: 'Aguardando laudo.', images: [] },
-  ];
+  const fetchData = useCallback(async () => {
+    setLoading(true);
+    try {
+      const [patientsRes, studiesRes] = await Promise.all([
+        api.patients.list({ size: 5, sort: 'createdAt', direction: 'desc' }),
+        api.studies.list({ size: 5, sort: 'createdAt', direction: 'desc' }),
+      ]);
+      setPatients(patientsRes.data);
+      setTotalPatients(patientsRes.meta.total_elements);
+      setStudies(studiesRes.data);
+      setTotalStudies(studiesRes.meta.total_elements);
+    } catch {
+      // silently fail
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
-  const MONITORED_PETS = [
-    { id: 1, name: 'Thor', image: 'https://images.unsplash.com/photo-1552053831-71594a27632d?auto=format&fit=crop&w=150&q=80', status: 'Estável', statusColor: 'green' as const },
-    { id: 2, name: 'Luna', image: 'https://images.unsplash.com/photo-1513245543132-31f507417b26?auto=format&fit=crop&w=150&q=80', status: 'Atenção', statusColor: 'yellow' as const },
-    { id: 3, name: 'Max', image: 'https://images.unsplash.com/photo-1583511655857-d19b40a7a54e?auto=format&fit=crop&w=150&q=80', status: 'Crítico', statusColor: 'red' as const },
-  ];
+  useEffect(() => {
+    void fetchData();
+  }, [fetchData]);
 
-  const RECENT_ACTIVITIES = [
-    { id: 1, petName: 'Thor', action: 'realizou exame de Hemograma Completo', time: '2 horas atrás' },
-    { id: 2, petName: 'Luna', action: 'foi adicionado ao sistema', time: '5 horas atrás' },
-    { id: 3, petName: 'Max', action: 'teve status de monitoramento atualizado', time: '1 dia atrás' },
-    { id: 4, petName: 'Thor', action: 'teve consulta agendada', time: '2 dias atrás' },
-  ];
-
-  const [patients] = useState(INITIAL_PATIENTS);
-  const [exams] = useState(INITIAL_EXAMS);
+  const completedStudies = studies.filter((s) => s.status === 'COMPLETED').length;
+  const pendingStudies = studies.filter((s) => s.status === 'PENDING' || s.status === 'PROCESSING').length;
 
   return (
     <main className="flex min-h-screen flex-col items-start gap-4">
@@ -45,107 +58,137 @@ export default function Dashboard() {
         <div className="w-full px-4 sm:px-6 lg:px-8 py-2">
           <Header title="Dashboard" usedGB={3.3} totalGB={10} />
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-            <StatCard title="Pacientes" value={3} />
-            <StatCard title="Exames concluídos" value={2} />
-            <StatCard title="Exames em análise" value={1} />
-            <StatCard title="Em monitoramento" value={3} />
-          </div>
-
-          <SectionCard
-            title="Exames recentes"
-            subtitle="Gerencie os últimos resultados enviados."
-            headerAction={
-              <Button variant="outline" className="bg-teal-600 dark:bg-teal-700 h-10 text-white hover:text-white hover:bg-teal-700 dark:hover:bg-teal-800 border-teal-600 dark:border-teal-700">
-                <UploadIcon className="text-white"/> Enviar exame
-              </Button>
-            }
-          >
-            <DataTable headers={['Data', 'Paciente', 'Tipo de Exame', 'Status', 'Ações']}>
-              {exams.map((exam) => {
-                const patient = patients.find((p) => p.id === exam.patientId);
-                return (
-                  <tr key={exam.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
-                    <td className="p-4 text-slate-600 dark:text-slate-300">{new Date(exam.date).toLocaleDateString('pt-BR')}</td>
-                    <td className="p-4">
-                      <div className="flex items-center gap-3">
-                        <img src={patient?.image} className="w-8 h-8 rounded-full object-cover" alt="" />
-                        <span className="font-medium text-slate-900 dark:text-white">{patient?.name}</span>
-                      </div>
-                    </td>
-                    <td className="p-4 text-slate-600 dark:text-slate-300">{exam.type}</td>
-                    <td className="p-4">
-                      <Badge color={exam.status === 'Concluído' ? 'green' : 'yellow'}>{exam.status}</Badge>
-                    </td>
-                    <td className="p-4 text-right">
-                      <button className="text-teal-600 hover:underline text-sm font-medium">Abrir</button>
-                    </td>
-                  </tr>
-                );
-              })}
-            </DataTable>
-          </SectionCard>
-
-          <div className="flex flex-col lg:flex-row gap-4 mt-8">
-            <SectionCard
-              title="Monitoramento"
-              subtitle="Visualização dos pacientes em monitoramento"
-              className="w-full lg:w-1/3"
-            >
-              <div className="flex flex-col gap-3">
-                {MONITORED_PETS.map((pet) => (
-                  <Card key={pet.id} className="p-4">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <img src={pet.image} alt={pet.name} className="w-12 h-12 rounded-full object-cover" />
-                        <h3 className="font-semibold text-gray-900 dark:text-white">{pet.name}</h3>
-                      </div>
-                      <Badge color={pet.statusColor}>{pet.status}</Badge>
-                    </div>
-                  </Card>
-                ))}
+          {loading ? (
+            <div className="flex items-center justify-center py-20">
+              <Loader2 size={32} className="animate-spin text-teal-600" />
+            </div>
+          ) : (
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+                <StatCard title="Pacientes" value={totalPatients} />
+                <StatCard title="Total de Exames" value={totalStudies} />
+                <StatCard title="Exames concluídos" value={completedStudies} />
+                <StatCard title="Exames em análise" value={pendingStudies} />
               </div>
-            </SectionCard>
 
-            <SectionCard
-              title="Últimos Pacientes"
-              subtitle="Pacientes adicionados recentemente"
-              className="w-full lg:w-1/3"
-            >
-              <div className="flex flex-col gap-3">
-                {patients.map((patient) => (
-                  <Card key={patient.id} className="p-4">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <img src={patient.image} alt={patient.name} className="w-12 h-12 rounded-full object-cover" />
-                        <h3 className="font-semibold text-gray-900 dark:text-white">{patient.name}</h3>
+              <SectionCard
+                title="Exames recentes"
+                subtitle="Últimos resultados enviados."
+                headerAction={
+                  <Button variant="outline" className="bg-teal-600 dark:bg-teal-700 h-10 text-white hover:text-white hover:bg-teal-700 dark:hover:bg-teal-800 border-teal-600 dark:border-teal-700">
+                    <UploadIcon className="text-white" /> Enviar exame
+                  </Button>
+                }
+              >
+                <DataTable headers={['Data', 'Paciente', 'Título', 'Status', 'Ações']}>
+                  {studies.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className="p-8 text-center">
+                        <Microscope size={32} className="text-slate-300 dark:text-slate-600 mx-auto mb-2" />
+                        <p className="text-sm text-slate-500 dark:text-slate-400">Nenhum exame ainda.</p>
+                      </td>
+                    </tr>
+                  ) : (
+                    studies.map((study) => {
+                      const statusInfo = STATUS_MAP[study.status] ?? { label: study.status, color: 'yellow' as const };
+                      return (
+                        <tr key={study.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                          <td className="p-4 text-slate-600 dark:text-slate-300">
+                            {new Date(study.created_at).toLocaleDateString('pt-BR')}
+                          </td>
+                          <td className="p-4">
+                            <span className="font-medium text-slate-900 dark:text-white">
+                              {study.patient?.name ?? '-'}
+                            </span>
+                          </td>
+                          <td className="p-4 text-slate-600 dark:text-slate-300">
+                            {study.title ?? 'Sem título'}
+                          </td>
+                          <td className="p-4">
+                            <Badge color={statusInfo.color}>{statusInfo.label}</Badge>
+                          </td>
+                          <td className="p-4 text-right">
+                            <button className="text-teal-600 hover:underline text-sm font-medium">
+                              Abrir
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </DataTable>
+              </SectionCard>
+
+              <div className="flex flex-col lg:flex-row gap-4 mt-8">
+                <SectionCard
+                  title="Últimos Pacientes"
+                  subtitle="Pacientes adicionados recentemente"
+                  className="w-full lg:w-1/2"
+                >
+                  <div className="flex flex-col gap-3">
+                    {patients.length === 0 ? (
+                      <div className="text-center py-8">
+                        <PawPrint size={32} className="text-slate-300 dark:text-slate-600 mx-auto mb-2" />
+                        <p className="text-sm text-slate-500 dark:text-slate-400">Nenhum paciente ainda.</p>
                       </div>
-                      <span className="text-sm text-gray-500 dark:text-slate-400">{new Date(patient.created).toLocaleDateString('pt-BR')}</span>
-                    </div>
-                  </Card>
-                ))}
-              </div>
-            </SectionCard>
+                    ) : (
+                      patients.map((patient) => (
+                        <Card key={patient.id} className="p-4">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                              <div className="w-10 h-10 rounded-full bg-teal-100 dark:bg-teal-900/40 flex items-center justify-center">
+                                <PawPrint size={18} className="text-teal-600 dark:text-teal-400" />
+                              </div>
+                              <div>
+                                <h3 className="font-semibold text-gray-900 dark:text-white">{patient.name}</h3>
+                                <p className="text-xs text-slate-500 dark:text-slate-400">{patient.specie}</p>
+                              </div>
+                            </div>
+                            <span className="text-sm text-gray-500 dark:text-slate-400">
+                              {new Date(patient.created_at).toLocaleDateString('pt-BR')}
+                            </span>
+                          </div>
+                        </Card>
+                      ))
+                    )}
+                  </div>
+                </SectionCard>
 
-            <SectionCard
-              title="Últimas Atividades"
-              subtitle="Histórico recente de atividades"
-              className="w-full lg:w-1/3"
-            >
-              <div className="flex flex-col gap-3">
-                {RECENT_ACTIVITIES.map((activity) => (
-                  <Card key={activity.id} className="p-4">
-                    <div className="flex flex-col gap-1">
-                      <p className="text-sm text-gray-900 dark:text-white">
-                        <span className="font-bold">{activity.petName}</span> {activity.action}
-                      </p>
-                      <span className="text-xs text-gray-500 dark:text-slate-400">{activity.time}</span>
-                    </div>
-                  </Card>
-                ))}
+                <SectionCard
+                  title="Resumo"
+                  subtitle="Visão geral da sua clínica"
+                  className="w-full lg:w-1/2"
+                >
+                  <div className="flex flex-col gap-3">
+                    <Card className="p-4">
+                      <div className="flex items-center justify-between">
+                        <p className="text-sm text-slate-600 dark:text-slate-400">Total de pacientes</p>
+                        <p className="text-lg font-bold text-slate-900 dark:text-white">{totalPatients}</p>
+                      </div>
+                    </Card>
+                    <Card className="p-4">
+                      <div className="flex items-center justify-between">
+                        <p className="text-sm text-slate-600 dark:text-slate-400">Total de exames</p>
+                        <p className="text-lg font-bold text-slate-900 dark:text-white">{totalStudies}</p>
+                      </div>
+                    </Card>
+                    <Card className="p-4">
+                      <div className="flex items-center justify-between">
+                        <p className="text-sm text-slate-600 dark:text-slate-400">Exames concluídos</p>
+                        <p className="text-lg font-bold text-teal-600 dark:text-teal-400">{completedStudies}</p>
+                      </div>
+                    </Card>
+                    <Card className="p-4">
+                      <div className="flex items-center justify-between">
+                        <p className="text-sm text-slate-600 dark:text-slate-400">Em processamento</p>
+                        <p className="text-lg font-bold text-amber-600 dark:text-amber-400">{pendingStudies}</p>
+                      </div>
+                    </Card>
+                  </div>
+                </SectionCard>
               </div>
-            </SectionCard>
-          </div>
+            </>
+          )}
         </div>
       </div>
     </main>
