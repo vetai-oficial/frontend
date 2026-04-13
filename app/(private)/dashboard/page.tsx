@@ -10,15 +10,13 @@ import { Header } from '@/app/components/header';
 import { SectionCard } from '@/app/components/section-card';
 import { StatCard } from '@/app/components/stat-card';
 import { Button } from '@/components/ui/button';
-import { api } from '@/lib/api';
-import type { Patient, Study } from '@/lib/api';
+import { STUDY_STATUS_MAP } from '@/constants';
+import { patientsService } from '@/services/patients.service';
+import { studiesService } from '@/services/studies.service';
+import type { Patient } from '@/types/patient';
+import type { Study } from '@/types/study';
 
-const STATUS_MAP: Record<string, { label: string; color: 'green' | 'yellow' | 'red' | 'blue' }> = {
-  COMPLETED: { label: 'Concluído', color: 'green' },
-  PROCESSING: { label: 'Processando', color: 'blue' },
-  PENDING: { label: 'Pendente', color: 'yellow' },
-  FAILED: { label: 'Falhou', color: 'red' },
-};
+const STATUS_MAP = STUDY_STATUS_MAP;
 
 export default function Dashboard() {
   const [patients, setPatients] = useState<Patient[]>([]);
@@ -31,8 +29,8 @@ export default function Dashboard() {
     setLoading(true);
     try {
       const [patientsRes, studiesRes] = await Promise.all([
-        api.patients.list({ size: 5, sort: 'createdAt', direction: 'desc' }),
-        api.studies.list({ size: 5, sort: 'createdAt', direction: 'desc' }),
+        patientsService.list({ size: 5, sort: 'createdAt', direction: 'desc' }),
+        studiesService.list({ size: 5, sort: 'createdAt', direction: 'desc' }),
       ]);
       setPatients(patientsRes.data);
       setTotalPatients(patientsRes.meta.total_elements);

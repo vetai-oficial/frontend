@@ -4,12 +4,14 @@ import { Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
+import { STORAGE_KEYS } from '@/constants';
+
 export function AuthGuard({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const [isChecking, setIsChecking] = useState(true);
 
   useEffect(() => {
-    const token = localStorage.getItem('vetai_token');
+    const token = localStorage.getItem(STORAGE_KEYS.TOKEN);
     if (!token) {
       router.replace('/login');
     } else {

@@ -60,8 +60,6 @@ async function request<T>(
   return response.json() as Promise<T>;
 }
 
-// ─── Types ──────────────────────────────────────────────
-
 export interface User {
   id: string;
   name: string;
@@ -190,7 +188,40 @@ export interface CreateHealthRecordPayload {
   metadata: Record<string, unknown>;
 }
 
-// ─── API Methods ────────────────────────────────────────
+export type ConsultationStatus = 'IN_PROGRESS' | 'COMPLETED';
+
+export interface ConsultationMessage {
+  role: 'user' | 'assistant';
+  content: string;
+  timestamp: string;
+}
+
+export interface ConsultationDisease {
+  name: string;
+  probability: number;
+  severity: 'red' | 'yellow' | 'green';
+  reasoning?: string;
+}
+
+export interface ConsultationDiagnosis {
+  diseases: ConsultationDisease[];
+  suggestedTreatments: string[];
+  suggestedQuestions: string[];
+  summary?: string;
+}
+
+export interface Consultation {
+  id: string;
+  user_id: string;
+  patient_id?: string;
+  status: ConsultationStatus;
+  started_at: string;
+  finished_at?: string;
+  messages: ConsultationMessage[];
+  diagnosis: ConsultationDiagnosis;
+  created_at: string;
+  updated_at: string;
+}
 
 function buildQuery(params?: QueryParams): string {
   if (!params) return '';
@@ -280,5 +311,18 @@ export const api = {
       }),
     delete: (id: string) =>
       request<void>(`tutors/${id}`, { method: 'DELETE' }),
+  },
+
+  consultations: {
+    create: (patientId?: string) =>
+      request<Consultation>('consultations', {
+        method: 'POST',
+        body: JSON.stringify(patientId ? { patientId } : {}),
+      }),
+    list: (params?: QueryParams) =>
+      request<PaginatedResponse<Consultation>>(
+        `consultations${buildQuery(params)}`,
+      ),
+    get: (id: string) => request<Consultation>(`consultations/${id}`),
   },
 };

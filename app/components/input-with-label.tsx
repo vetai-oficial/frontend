@@ -11,7 +11,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-import { cn } from '@/lib/utils';
+import { cn } from '@/infra/utils';
 
 export interface InputWithLabelProps extends React.ComponentProps<'input'> {
   label?: string

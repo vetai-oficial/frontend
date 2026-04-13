@@ -34,8 +34,8 @@
       "@components/*": [
         "./components/*"
       ],
-      "@lib/*": [
-        "./lib/*"
+      "@infra/*": [
+        "./infra/*"
       ],
       "@hooks/*": [
         "./hooks/*"

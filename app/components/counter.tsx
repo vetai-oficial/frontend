@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+
 import { useReveal } from '@/hooks/use-reveal';
 
 interface CounterProps {

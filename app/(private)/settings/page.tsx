@@ -63,7 +63,6 @@ export default function Settings() {
   const handleAddCollaborator = () => {
     if (!newCollaboratorEmail.trim()) return;
 
-    // Aqui você adicionaria a lógica para enviar convite
     setNewCollaboratorEmail('');
   };
 

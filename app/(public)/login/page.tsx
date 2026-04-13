@@ -5,10 +5,13 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
+import { AuthPanel } from '@/app/components/auth-panel';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { api, setToken, ApiError } from '@/lib/api';
+import { STORAGE_KEYS } from '@/constants';
+import { ApiError, setToken } from '@/infra/http-client';
+import { authService } from '@/services/auth.service';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -24,9 +27,9 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      const response = await api.auth.login({ email, password });
+      const response = await authService.login({ email, password });
       setToken(response.access_token);
-      localStorage.setItem('vetai_user', JSON.stringify(response.user));
+      localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(response.user));
       router.push('/dashboard');
     } catch (err) {
       if (err instanceof ApiError) {
@@ -41,45 +44,18 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen flex">
-      {/* Left Panel */}
-      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-teal-600 to-emerald-700 relative overflow-hidden">
-        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMC4wNSI+PHBhdGggZD0iTTM2IDM0djItSDI0di0yaDEyem0wLTRWMjhIMjR2Mmgxem0tOCA4di0ySDI0djJoNHoiLz48L2c+PC9nPjwvc3ZnPg==')] opacity-30" />
-        <div className="relative z-10 flex flex-col justify-center px-16">
-          <Link href="/" className="flex items-center gap-3 mb-12">
-            <Activity className="text-white" size={36} />
-            <span className="text-3xl font-bold text-white tracking-tight">
-              Vet.AI
-            </span>
-          </Link>
-          <h2 className="text-4xl font-bold text-white leading-tight mb-4">
-            Bem-vindo de volta
-          </h2>
-          <p className="text-teal-100 text-lg leading-relaxed max-w-md">
-            Acesse sua conta e continue cuidando dos seus pacientes com o poder
-            da inteligência artificial.
-          </p>
-          <div className="mt-16 space-y-4">
-            {[
-              'Diagnósticos assistidos por IA',
-              'Análise automática de exames',
-              'Monitoramento em tempo real',
-            ].map((item) => (
-              <div key={item} className="flex items-center gap-3 text-teal-100">
-                <div className="w-2 h-2 rounded-full bg-teal-300" />
-                <span className="text-sm">{item}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
+      <AuthPanel
+        title="Bem-vindo de volta"
+        description="Acesse sua conta e continue cuidando dos seus pacientes com o poder da inteligncia artificial."
+        gradient="from-teal-600 via-teal-700 to-emerald-800"
+      />
 
-      {/* Right Panel - Form */}
       <div className="flex-1 flex items-center justify-center p-8 bg-white dark:bg-slate-950">
         <div className="w-full max-w-md">
           <div className="lg:hidden flex items-center gap-2 mb-8">
             <Activity className="text-teal-600" size={28} />
             <span className="font-bold text-xl text-slate-900 dark:text-white">
-              Vet.AI
+              VetAI
             </span>
           </div>
 

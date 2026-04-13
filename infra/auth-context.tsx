@@ -8,8 +8,11 @@ import {
   useMemo,
   useState,
 } from 'react';
-import type { User } from '@/lib/api';
-import { api, setToken, removeToken, ApiError } from '@/lib/api';
+
+import { STORAGE_KEYS } from '@/constants';
+import { setToken, removeToken } from '@/infra/http-client';
+import { authService } from '@/services/auth.service';
+import type { User } from '@/types/auth';
 
 interface AuthState {
   user: User | null;
@@ -33,8 +36,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   });
 
   useEffect(() => {
-    const storedUser = localStorage.getItem('vetai_user');
-    const token = localStorage.getItem('vetai_token');
+    const storedUser = localStorage.getItem(STORAGE_KEYS.USER);
+    const token = localStorage.getItem(STORAGE_KEYS.TOKEN);
 
     if (storedUser && token) {
       try {
@@ -42,7 +45,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setState({ user, isLoading: false, isAuthenticated: true });
       } catch {
         removeToken();
-        localStorage.removeItem('vetai_user');
+        localStorage.removeItem(STORAGE_KEYS.USER);
         setState({ user: null, isLoading: false, isAuthenticated: false });
       }
     } else {
@@ -51,29 +54,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const login = useCallback(async (email: string, password: string) => {
-    const response = await api.auth.login({ email, password });
+    const response = await authService.login({ email, password });
     setToken(response.access_token);
-    localStorage.setItem('vetai_user', JSON.stringify(response.user));
+    localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(response.user));
     setState({ user: response.user, isLoading: false, isAuthenticated: true });
   }, []);
 
   const register = useCallback(
     async (name: string, email: string, password: string) => {
-      const response = await api.auth.register({ name, email, password });
+      const response = await authService.register({ name, email, password });
       setToken(response.access_token);
-      localStorage.setItem('vetai_user', JSON.stringify(response.user));
-      setState({
-        user: response.user,
-        isLoading: false,
-        isAuthenticated: true,
-      });
+      localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(response.user));
+      setState({ user: response.user, isLoading: false, isAuthenticated: true });
     },
     [],
   );
 
   const logout = useCallback(() => {
     removeToken();
-    localStorage.removeItem('vetai_user');
+    localStorage.removeItem(STORAGE_KEYS.USER);
     setState({ user: null, isLoading: false, isAuthenticated: false });
   }, []);
 

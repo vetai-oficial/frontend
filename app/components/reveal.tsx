@@ -1,7 +1,7 @@
 'use client';
 
 import { useReveal } from '@/hooks/use-reveal';
-import { cn } from '@/lib/utils';
+import { cn } from '@/infra/utils';
 
 type Direction = 'up' | 'down' | 'left' | 'right' | 'none';
 
