@@ -3,6 +3,8 @@
 import { Loader2, Search, X } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
+import { DateInput } from './date-input';
+
 import { Button } from '@/components/ui/button';
 import { SPECIE_LABELS } from '@/constants';
 import { patientsService } from '@/services/patients.service';
@@ -28,6 +30,13 @@ export function PatientModal({ patient, onClose, onSuccess }: PatientModalProps)
     patient?.birth_date ? patient.birth_date.slice(0, 10) : '',
   );
   const [sex, setSex] = useState(patient?.sex ?? '');
+  const [castrationDate, setCastrationDate] = useState(
+    patient?.castration_date ? patient.castration_date.slice(0, 10) : '',
+  );
+  const [deathDate, setDeathDate] = useState(
+    patient?.death_date ? patient.death_date.slice(0, 10) : '',
+  );
+  const [microchip, setMicrochip] = useState(patient?.microchip ?? '');
 
   const [selectedTutor, setSelectedTutor] = useState<Tutor | null>(null);
   const [tutorSearch, setTutorSearch] = useState('');
@@ -106,6 +115,9 @@ export function PatientModal({ patient, onClose, onSuccess }: PatientModalProps)
         if (breed.trim()) payload.breed = breed.trim();
         if (birthDate) payload.birth_date = birthDate;
         if (sex) payload.sex = sex as Sex;
+        if (castrationDate) payload.castration_date = castrationDate;
+        if (deathDate) payload.death_date = deathDate;
+        if (microchip.trim()) payload.microchip = microchip.trim();
         result = await patientsService.update(patient.id, payload);
       } else {
         const payload = {
@@ -116,6 +128,9 @@ export function PatientModal({ patient, onClose, onSuccess }: PatientModalProps)
         if (breed.trim()) payload.breed = breed.trim();
         if (birthDate) payload.birth_date = birthDate;
         if (sex) payload.sex = sex as Sex;
+        if (castrationDate) payload.castration_date = castrationDate;
+        if (deathDate) payload.death_date = deathDate;
+        if (microchip.trim()) payload.microchip = microchip.trim();
         result = await patientsService.create(payload);
       }
       onSuccess(result);
@@ -130,7 +145,6 @@ export function PatientModal({ patient, onClose, onSuccess }: PatientModalProps)
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
       <div className="relative bg-white dark:bg-slate-800 rounded-xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto animate-in fade-in zoom-in-95 duration-200">
-        {/* Header */}
         <div className="flex items-center justify-between p-5 border-b border-slate-200 dark:border-slate-700 sticky top-0 bg-white dark:bg-slate-800 z-10">
           <div>
             <h2 className="text-lg font-bold text-slate-900 dark:text-white">
@@ -145,9 +159,7 @@ export function PatientModal({ patient, onClose, onSuccess }: PatientModalProps)
           </button>
         </div>
 
-        {/* Body */}
         <div className="p-5 space-y-4">
-          {/* Name */}
           <div>
             <label className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
               Nome <span className="text-red-500">*</span>
@@ -162,7 +174,6 @@ export function PatientModal({ patient, onClose, onSuccess }: PatientModalProps)
             {errors.name && <p className="text-xs text-red-500 mt-1">{errors.name}</p>}
           </div>
 
-          {/* Species */}
           <div>
             <label className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
               Espécie <span className="text-red-500">*</span>
@@ -180,7 +191,6 @@ export function PatientModal({ patient, onClose, onSuccess }: PatientModalProps)
             {errors.specie && <p className="text-xs text-red-500 mt-1">{errors.specie}</p>}
           </div>
 
-          {/* Breed + Sex side by side */}
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
@@ -210,20 +220,38 @@ export function PatientModal({ patient, onClose, onSuccess }: PatientModalProps)
             </div>
           </div>
 
-          {/* Birth date */}
-          <div>
-            <label className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
-              Data de nascimento
-            </label>
-            <input
-              type="date"
-              value={birthDate}
-              onChange={(e) => setBirthDate(e.target.value)}
-              className="w-full px-3 py-2.5 text-sm border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500 scheme-light dark:scheme-dark cursor-pointer"
+          <DateInput
+            label="Data de nascimento"
+            value={birthDate}
+            onChange={setBirthDate}
+          />
+
+          <div className="grid grid-cols-2 gap-3">
+            <DateInput
+              label="Data de castração"
+              value={castrationDate}
+              onChange={setCastrationDate}
             />
+            <div>
+              <label className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
+                Microchip
+              </label>
+              <input
+                type="text"
+                value={microchip}
+                onChange={(e) => setMicrochip(e.target.value)}
+                placeholder="Ex: 900123456789012"
+                className="w-full px-3 py-2.5 text-sm border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+              />
+            </div>
           </div>
 
-          {/* Tutor search */}
+          <DateInput
+            label="Data de falecimento"
+            value={deathDate}
+            onChange={setDeathDate}
+          />
+
           <div>
             <label className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
               Tutor {!isEdit && <span className="text-red-500">*</span>}
@@ -286,7 +314,6 @@ export function PatientModal({ patient, onClose, onSuccess }: PatientModalProps)
           )}
         </div>
 
-        {/* Footer */}
         <div className="flex items-center justify-end gap-3 px-5 py-4 border-t border-slate-200 dark:border-slate-700">
           <Button variant="outline" onClick={onClose} disabled={saving}>
             Cancelar

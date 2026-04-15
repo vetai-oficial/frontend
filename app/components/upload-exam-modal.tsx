@@ -3,6 +3,8 @@
 import { FileText, Loader2, Search, Upload, X } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
+import { DateInput } from './date-input';
+
 import { Button } from '@/components/ui/button';
 import { patientsService } from '@/services/patients.service';
 import { studiesService } from '@/services/studies.service';
@@ -94,7 +96,7 @@ export function UploadExamModal({
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(false);
-    const dropped = e.dataTransfer.files[0];
+    const [dropped] = e.dataTransfer.files;
     if (dropped) handleFileChange(dropped);
   };
 
@@ -132,7 +134,6 @@ export function UploadExamModal({
         onClick={onClose}
       />
       <div className="relative bg-white dark:bg-slate-800 rounded-xl shadow-2xl w-full max-w-lg animate-in fade-in zoom-in-95 duration-200">
-        {/* Header */}
         <div className="flex items-center justify-between p-5 border-b border-slate-200 dark:border-slate-700">
           <div>
             <h2 className="text-lg font-bold text-slate-900 dark:text-white">
@@ -150,9 +151,7 @@ export function UploadExamModal({
           </button>
         </div>
 
-        {/* Body */}
         <div className="p-5 space-y-4">
-          {/* Patient selector */}
           {!preselectedPatient && (
             <div>
               <label className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-2 block">
@@ -238,7 +237,6 @@ export function UploadExamModal({
             </div>
           )}
 
-          {/* Title + Exam date side by side */}
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-2 block">
@@ -252,20 +250,13 @@ export function UploadExamModal({
                 className="w-full px-3 py-2.5 text-sm border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
               />
             </div>
-            <div>
-              <label className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-2 block">
-                Data do exame
-              </label>
-              <input
-                type="date"
-                value={examDate}
-                onChange={(e) => setExamDate(e.target.value)}
-                className="w-full px-3 py-2.5 text-sm border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500 scheme-light dark:scheme-dark cursor-pointer"
-              />
-            </div>
+            <DateInput
+              label="Data do exame"
+              value={examDate}
+              onChange={setExamDate}
+            />
           </div>
 
-          {/* File upload */}
           <div>
             <label className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-2 block">
               Arquivo PDF do exame <span className="text-red-500">*</span>
@@ -275,8 +266,8 @@ export function UploadExamModal({
                 isDragging
                   ? 'border-teal-500 bg-teal-50 dark:bg-teal-900/20'
                   : file
-                  ? 'border-teal-400 bg-teal-50/50 dark:bg-teal-900/10'
-                  : 'border-slate-300 dark:border-slate-600 hover:border-teal-400 hover:bg-slate-50 dark:hover:bg-slate-700/50'
+                    ? 'border-teal-400 bg-teal-50/50 dark:bg-teal-900/10'
+                    : 'border-slate-300 dark:border-slate-600 hover:border-teal-400 hover:bg-slate-50 dark:hover:bg-slate-700/50'
               }`}
               onClick={() => fileInputRef.current?.click()}
               onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
@@ -321,7 +312,6 @@ export function UploadExamModal({
           )}
         </div>
 
-        {/* Footer */}
         <div className="flex items-center justify-end gap-3 px-5 py-4 border-t border-slate-200 dark:border-slate-700">
           <Button variant="outline" onClick={onClose} disabled={uploading}>
             Cancelar

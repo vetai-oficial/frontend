@@ -3,8 +3,13 @@ import type { PaginatedResponse, QueryParams } from '@/types/common';
 import type { Study } from '@/types/study';
 
 export const studiesService = {
-  list: (params?: QueryParams) =>
-    httpClient<PaginatedResponse<Study>>(`study${buildQuery(params)}`),
+  list: (params?: QueryParams & { patient_id?: string }) => {
+    const base = buildQuery(params);
+    const patientParam = params?.patient_id
+      ? `${base ? '&' : '?'}patient_id=${params.patient_id}`
+      : '';
+    return httpClient<PaginatedResponse<Study>>(`study${base}${patientParam}`);
+  },
 
   get: (id: string) =>
     httpClient<Study>(`study/${id}`),

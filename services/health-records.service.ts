@@ -25,6 +25,11 @@ export const healthRecordsService = {
       body: JSON.stringify(data),
     }),
 
+  getLastVaccine: (patientId: string, vaccineId: string) =>
+    httpClient<import('@/types/health-record').HealthRecord | null>(
+      `patients/${patientId}/records/last-vaccine?vaccine_id=${vaccineId}`,
+    ).catch(() => null),
+
   delete: (patientId: string, recordId: string) =>
     httpClient<void>(`patients/${patientId}/records/${recordId}`, {
       method: 'DELETE',

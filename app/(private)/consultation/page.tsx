@@ -16,6 +16,11 @@ import {
 } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
+import { ConfirmFinishModal } from './components/confirm-finish-modal';
+import { FinishingOverlay } from './components/finishing-overlay';
+import { TypingEffect } from './components/typing-effect';
+import { TypingIndicator } from './components/typing-indicator';
+
 import { Badge } from '@/app/components/badge';
 import { ConsultationHistory } from '@/app/components/consultation-history';
 import { DiseaseDetailModal } from '@/app/components/disease-detail-modal';
@@ -28,62 +33,7 @@ import type { ChatMessage } from '@/hooks/use-consultation';
 import { disconnectSocket } from '@/infra/socket';
 import { consultationsService } from '@/services/consultations.service';
 import type { ConsultationDisease } from '@/types/consultation';
-
-function normalizeProb(p: number): number {
-  return p <= 1 ? Math.round(p * 100) : Math.round(p);
-}
-
-function TypingEffect({
-  text,
-  onComplete,
-  onTick,
-}: {
-  text: string;
-  onComplete?: () => void;
-  onTick?: () => void;
-}) {
-  const [displayedText, setDisplayedText] = useState('');
-  const [currentIndex, setCurrentIndex] = useState(0);
-
-  useEffect(() => {
-    if (currentIndex < text.length) {
-      const timeout = setTimeout(() => {
-        setDisplayedText((prev) => prev + text[currentIndex]);
-        setCurrentIndex((prev) => prev + 1);
-        onTick?.();
-      }, 20);
-      return () => clearTimeout(timeout);
-    } else if (onComplete && currentIndex === text.length) {
-      onComplete();
-    }
-  }, [currentIndex, text, onComplete, onTick]);
-
-  return <p className="text-sm whitespace-pre-wrap">{displayedText}</p>;
-}
-
-function TypingIndicator() {
-  return (
-    <div className="flex items-center gap-1">
-      <span className="w-2 h-2 bg-slate-400 dark:bg-slate-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-      <span className="w-2 h-2 bg-slate-400 dark:bg-slate-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-      <span className="w-2 h-2 bg-slate-400 dark:bg-slate-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
-    </div>
-  );
-}
-
-function FinishingOverlay() {
-  return (
-    <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm rounded-lg">
-      <Loader2 size={40} className="animate-spin text-teal-600 mb-4" />
-      <p className="text-lg font-semibold text-slate-900 dark:text-white">
-        Salvando dados da consulta...
-      </p>
-      <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-        Gerando resumo e diagnósticos finais
-      </p>
-    </div>
-  );
-}
+import { normalizeProb } from '@/utils/date-format';
 
 export default function Consultation() {
   const [consultationId, setConsultationId] = useState<string | null>(null);
@@ -164,7 +114,7 @@ export default function Consultation() {
           resumeConsultation(existing);
         }
       } catch {
-        // silently fail, user can start a new consultation manually
+        // silently fail
       } finally {
         if (!cancelled) setIsCheckingInProgress(false);
       }
@@ -302,9 +252,6 @@ export default function Consultation() {
               headerAction={
                 !isFinished ? (
                   <div className="flex gap-2">
-                    {/* <Button variant="outline" size="sm" onClick={() => setShowHistory(true)}>
-                      <History size={16} />
-                    </Button> */}
                     <Button
                       variant="outline"
                       size="sm"
@@ -525,24 +472,10 @@ export default function Consultation() {
       )}
 
       {showConfirmFinish && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setShowConfirmFinish(false)} />
-          <div className="relative bg-white dark:bg-slate-800 rounded-xl shadow-2xl w-full max-w-sm p-6 animate-in fade-in zoom-in-95 duration-200">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="p-2 rounded-lg bg-amber-100 dark:bg-amber-900/30">
-                <Star size={20} className="text-amber-600 dark:text-amber-400" />
-              </div>
-              <h3 className="text-lg font-bold text-slate-900 dark:text-white">Marcar diagnóstico?</h3>
-            </div>
-            <p className="text-sm text-slate-600 dark:text-slate-400 mb-5">
-              Você ainda não marcou nenhuma doença como a mais provável. Deseja continuar sem marcar ou voltar para selecionar?
-            </p>
-            <div className="flex gap-2 justify-end">
-              <Button variant="outline" size="sm" onClick={() => setShowConfirmFinish(false)}>Voltar e marcar</Button>
-              <Button size="sm" onClick={handleConfirmFinish} className="bg-amber-600 hover:bg-amber-700 text-white">Finalizar assim mesmo</Button>
-            </div>
-          </div>
-        </div>
+        <ConfirmFinishModal
+          onConfirm={handleConfirmFinish}
+          onCancel={() => setShowConfirmFinish(false)}
+        />
       )}
 
       {showHistory && <ConsultationHistory onClose={() => setShowHistory(false)} />}

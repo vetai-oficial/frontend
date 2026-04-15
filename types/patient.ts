@@ -8,6 +8,9 @@ export interface Patient {
   breed?: string;
   birth_date?: string;
   sex?: Sex;
+  castration_date?: string;
+  death_date?: string;
+  microchip?: string;
   tutor_id: string;
   created_at: string;
   updated_at: string;
@@ -19,6 +22,9 @@ export interface CreatePatientPayload {
   breed?: string;
   birth_date?: string;
   sex?: Sex;
+  castration_date?: string;
+  death_date?: string;
+  microchip?: string;
   tutor_id: string;
 }
 
@@ -28,5 +34,8 @@ export interface UpdatePatientPayload {
   breed?: string;
   birth_date?: string;
   sex?: Sex;
+  castration_date?: string;
+  death_date?: string;
+  microchip?: string;
   tutor_id?: string;
 }

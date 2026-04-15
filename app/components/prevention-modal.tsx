@@ -31,7 +31,6 @@ export function PreventionModal({
         onClick={onClose}
       />
       <div className="relative bg-white dark:bg-slate-800 rounded-xl shadow-2xl w-full max-w-lg max-h-[85vh] overflow-y-auto animate-in fade-in zoom-in-95 duration-200">
-        {/* Header */}
         <div className="sticky top-0 bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 p-5 flex items-start justify-between gap-3 z-10">
           <div className="flex items-start gap-3">
             <div className="p-2 rounded-lg bg-teal-50 dark:bg-teal-900/30 border border-teal-200 dark:border-teal-700">
@@ -56,7 +55,6 @@ export function PreventionModal({
           </button>
         </div>
 
-        {/* Body */}
         <div className="p-5 space-y-6">
           {prevention.alteredValues.map((altered, idx) => (
             <div key={idx}>

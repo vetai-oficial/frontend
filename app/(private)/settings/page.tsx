@@ -9,14 +9,7 @@ import { SectionCard } from '@/app/components/section-card';
 import { Switch } from '@/app/components/switch';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-
-interface Collaborator {
-  id: number;
-  name: string;
-  email: string;
-  role: string;
-  addedAt: string;
-}
+import type { Collaborator } from '@/types/settings';
 
 export default function Settings() {
   const [notifications, setNotifications] = useState({

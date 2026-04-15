@@ -16,6 +16,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Badge } from '@/app/components/badge';
 import { consultationsService } from '@/services/consultations.service';
 import type { Consultation } from '@/types/consultation';
+import { normalizeProb } from '@/utils/date-format';
 
 interface ConsultationHistoryProps {
   onClose: () => void;
@@ -68,8 +69,6 @@ export function ConsultationHistory({ onClose }: ConsultationHistoryProps) {
       hour: '2-digit',
       minute: '2-digit',
     });
-
-  const normalizeProb = (p: number) => (p <= 1 ? Math.round(p * 100) : Math.round(p));
 
   if (selectedConsultation) {
     return (

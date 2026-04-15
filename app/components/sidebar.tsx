@@ -10,8 +10,10 @@ import {
   SquareActivity,
   MessageCircleQuestionMark,
   Menu,
+  Syringe,
   Users,
   X,
+  CalendarDays,
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
@@ -36,6 +38,8 @@ export function Sidebar() {
     { href: '/exams', icon: Microscope, label: 'Exames' },
     { href: '/patients', icon: PawPrint, label: 'Pacientes' },
     { href: '/tutors', icon: Users, label: 'Tutores' },
+    { href: '/vaccines', icon: Syringe, label: 'Vacinas' },
+    { href: '/schedule', icon: CalendarDays, label: 'Agendamentos' },
     { href: '/monitoring', icon: SquareActivity, label: 'Monitoramento' },
     { href: '/consultation', icon: MessageCircleQuestionMark, label: 'Consulta' },
     { href: '/settings', icon: Settings, label: 'Configurações' },
