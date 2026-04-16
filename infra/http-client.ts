@@ -1,3 +1,5 @@
+import { toast } from 'sonner';
+
 import { STORAGE_KEYS } from '@/constants';
 import type { QueryParams } from '@/types/common';
 
@@ -27,40 +29,61 @@ export function removeToken(): void {
   localStorage.removeItem(STORAGE_KEYS.TOKEN);
 }
 
+export interface HttpClientOptions extends RequestInit {
+  skipToast?: boolean;
+}
+
 export async function httpClient<T>(
   endpoint: string,
-  options: RequestInit = {},
+  options: HttpClientOptions = {},
 ): Promise<T> {
   const token = getToken();
+  const { skipToast = false, ...fetchOptions } = options;
   const headers: Record<string, string> = {
-    ...(options.headers as Record<string, string>),
+    ...(fetchOptions.headers as Record<string, string>),
   };
 
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;
   }
 
-  if (!(options.body instanceof FormData)) {
+  if (!(fetchOptions.body instanceof FormData)) {
     headers['Content-Type'] = 'application/json';
   }
 
-  const response = await fetch(`${API_BASE_URL}/${endpoint}`, {
-    ...options,
-    headers,
-  });
+  try {
+    const response = await fetch(`${API_BASE_URL}/${endpoint}`, {
+      ...fetchOptions,
+      headers,
+    });
 
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => null);
-    throw new ApiError(
-      response.status,
-      (errorData as { message?: string })?.message ?? 'Erro na requisição',
-      errorData,
-    );
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => null);
+      const errorMessage =
+        (errorData as { message?: string })?.message ?? 'Erro na requisição';
+
+      if (!skipToast) {
+        toast.error(errorMessage);
+      }
+
+      throw new ApiError(response.status, errorMessage, errorData);
+    }
+
+    if (response.status === 204) return undefined as T;
+
+    return response.json() as Promise<T>;
+  } catch (error) {
+    if (error instanceof ApiError) {
+      throw error;
+    }
+
+    const genericMessage = 'Erro de conexão com o servidor';
+    if (!skipToast) {
+      toast.error(genericMessage);
+    }
+
+    throw new Error(genericMessage);
   }
-
-  if (response.status === 204) return undefined as T;
-
-  return response.json() as Promise<T>;
 }
 
 export function buildQuery(params?: QueryParams): string {

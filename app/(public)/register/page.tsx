@@ -48,7 +48,7 @@ export default function RegisterPage() {
       const response = await authService.register({ name, email, password });
       setToken(response.access_token);
       localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(response.user));
-      router.push('/dashboard');
+      router.push('/analytics/dashboard');
     } catch (err) {
       if (err instanceof ApiError) {
         setError(err.message);
@@ -61,104 +61,104 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="min-h-screen flex">
+    <div className='min-h-screen flex'>
       <AuthPanel
-        title="Comece sua jornada"
-        description="Crie sua conta gratuita e descubra como a inteligência artificial pode revolucionar sua prática veterinária."
-        gradient="from-emerald-600 via-teal-700 to-cyan-800"
+        title='Comece sua jornada'
+        description='Crie sua conta gratuita e descubra como a inteligência artificial pode revolucionar sua prática veterinária.'
+        gradient='from-emerald-600 via-teal-700 to-cyan-800'
       />
 
-      <div className="flex-1 flex items-center justify-center p-8 bg-white dark:bg-slate-950">
-        <div className="w-full max-w-md">
-          <div className="lg:hidden flex items-center gap-2 mb-8">
-            <Activity className="text-teal-600" size={28} />
-            <span className="font-bold text-xl text-slate-900 dark:text-white">
+      <div className='flex-1 flex items-center justify-center p-8 bg-white dark:bg-slate-950'>
+        <div className='w-full max-w-md'>
+          <div className='lg:hidden flex items-center gap-2 mb-8'>
+            <Activity className='text-teal-600' size={28} />
+            <span className='font-bold text-xl text-slate-900 dark:text-white'>
               VetAI
             </span>
           </div>
 
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">
+          <h1 className='text-2xl font-bold text-slate-900 dark:text-white mb-2'>
             Criar sua conta
           </h1>
-          <p className="text-slate-500 dark:text-slate-400 mb-8">
+          <p className='text-slate-500 dark:text-slate-400 mb-8'>
             Preencha os dados abaixo para começar.
           </p>
 
           {error && (
-            <div className="mb-6 p-4 rounded-lg bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 text-sm">
+            <div className='mb-6 p-4 rounded-lg bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 text-sm'>
               {error}
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-5">
-            <div className="space-y-2">
-              <Label htmlFor="name">Nome completo</Label>
+          <form onSubmit={handleSubmit} className='space-y-5'>
+            <div className='space-y-2'>
+              <Label htmlFor='name'>Nome completo</Label>
               <Input
-                id="name"
-                type="text"
-                placeholder="Dr(a). João Silva"
+                id='name'
+                type='text'
+                placeholder='Dr(a). João Silva'
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 required
-                autoComplete="name"
-                className="h-11"
+                autoComplete='name'
+                className='h-11'
               />
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+            <div className='space-y-2'>
+              <Label htmlFor='email'>Email</Label>
               <Input
-                id="email"
-                type="email"
-                placeholder="seu@email.com"
+                id='email'
+                type='email'
+                placeholder='seu@email.com'
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                autoComplete="email"
-                className="h-11"
+                autoComplete='email'
+                className='h-11'
               />
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="password">Senha</Label>
-              <div className="relative">
+            <div className='space-y-2'>
+              <Label htmlFor='password'>Senha</Label>
+              <div className='relative'>
                 <Input
-                  id="password"
+                  id='password'
                   type={showPassword ? 'text' : 'password'}
-                  placeholder="Crie uma senha forte"
+                  placeholder='Crie uma senha forte'
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
-                  autoComplete="new-password"
-                  className="h-11 pr-10"
+                  autoComplete='new-password'
+                  className='h-11 pr-10'
                 />
                 <button
-                  type="button"
+                  type='button'
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                  className='absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600'
                 >
                   {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
               </div>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="confirmPassword">Confirmar senha</Label>
-              <div className="relative">
+            <div className='space-y-2'>
+              <Label htmlFor='confirmPassword'>Confirmar senha</Label>
+              <div className='relative'>
                 <Input
-                  id="confirmPassword"
+                  id='confirmPassword'
                   type={showConfirmPassword ? 'text' : 'password'}
-                  placeholder="Confirme sua senha"
+                  placeholder='Confirme sua senha'
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   required
-                  autoComplete="new-password"
-                  className="h-11 pr-10"
+                  autoComplete='new-password'
+                  className='h-11 pr-10'
                 />
                 <button
-                  type="button"
+                  type='button'
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                  className='absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600'
                 >
                   {showConfirmPassword ? (
                     <EyeOff size={18} />
@@ -168,20 +168,20 @@ export default function RegisterPage() {
                 </button>
               </div>
               {confirmPassword && confirmPassword !== password && (
-                <p className="text-xs text-red-500">As senhas não coincidem.</p>
+                <p className='text-xs text-red-500'>As senhas não coincidem.</p>
               )}
             </div>
 
             <PasswordStrength password={password} />
 
             <Button
-              type="submit"
+              type='submit'
               disabled={loading}
-              className="w-full h-11 bg-teal-600 hover:bg-teal-700 text-white"
+              className='w-full h-11 bg-teal-600 hover:bg-teal-700 text-white'
             >
               {loading ? (
                 <>
-                  <Loader2 size={18} className="animate-spin" /> Criando
+                  <Loader2 size={18} className='animate-spin' /> Criando
                   conta...
                 </>
               ) : (
@@ -190,11 +190,11 @@ export default function RegisterPage() {
             </Button>
           </form>
 
-          <p className="mt-8 text-center text-sm text-slate-500 dark:text-slate-400">
+          <p className='mt-8 text-center text-sm text-slate-500 dark:text-slate-400'>
             Já tem uma conta?{' '}
             <Link
-              href="/login"
-              className="text-teal-600 hover:text-teal-700 dark:text-teal-400 font-medium"
+              href='/login'
+              className='text-teal-600 hover:text-teal-700 dark:text-teal-400 font-medium'
             >
               Entrar
             </Link>

@@ -34,7 +34,7 @@ export function Sidebar() {
   }
 
   const menuItems = [
-    { href: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
+    { href: '/analytics/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
     { href: '/exams', icon: Microscope, label: 'Exames' },
     { href: '/patients', icon: PawPrint, label: 'Pacientes' },
     { href: '/tutors', icon: Users, label: 'Tutores' },
