@@ -106,20 +106,20 @@ export default function TutorsPage() {
           }
         >
           <DataTable
-            headers={['Tutor', 'Telefone', 'E-mail', 'Cadastrado em', 'Ações']}
+            headers={['Tutor', 'CPF', 'Telefone', 'E-mail', 'Cadastrado em', 'Ações']}
             showSearch={true}
             onSearch={handleSearch}
             searchPlaceholder="Buscar por nome..."
           >
             {loading ? (
               <tr>
-                <td colSpan={5} className="p-8 text-center">
+                <td colSpan={6} className="p-8 text-center">
                   <Loader2 size={24} className="animate-spin text-teal-600 mx-auto" />
                 </td>
               </tr>
             ) : tutors.length === 0 ? (
               <tr>
-                <td colSpan={5} className="p-8 text-center">
+                <td colSpan={6} className="p-8 text-center">
                   <User size={32} className="text-slate-300 dark:text-slate-600 mx-auto mb-2" />
                   <p className="text-slate-500 dark:text-slate-400 text-sm">
                     {search ? 'Nenhum tutor encontrado.' : 'Nenhum tutor cadastrado ainda.'}
@@ -139,6 +139,9 @@ export default function TutorsPage() {
                       </div>
                       <p className="font-medium text-slate-900 dark:text-white">{tutor.name}</p>
                     </div>
+                  </td>
+                  <td className="p-4 text-slate-600 dark:text-slate-300">
+                    {tutor.cpf ?? <span className="text-slate-400 dark:text-slate-500">—</span>}
                   </td>
                   <td className="p-4 text-slate-600 dark:text-slate-300">
                     {tutor.phone ? (

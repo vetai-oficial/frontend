@@ -30,4 +30,7 @@ export const studiesService = {
     httpClient<Study>(`study/${id}/prevention`, {
       method: 'POST',
     }),
+
+  getPdf: (id: string) =>
+    httpClient<{ pdfBase64: string }>(`study/${id}/pdf`),
 };

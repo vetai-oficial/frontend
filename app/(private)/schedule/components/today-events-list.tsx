@@ -63,7 +63,7 @@ export function TodayEventsList({ date, events, onEventClick, onAddClick }: Toda
                     <p className={`text-sm font-semibold truncate ${typeInfo.color}`}>{ev.title}</p>
                   </div>
                   <span className={`text-xs shrink-0 font-medium ${typeInfo.color}`}>
-                    {ev.startTime}{ev.endTime ? `–${ev.endTime}` : ''}
+                    {ev.startTime}{ev.endTime ? ` – ${ev.endTime}` : ''}
                   </span>
                 </div>
                 {(ev.patientName ?? ev.tutorName) && (

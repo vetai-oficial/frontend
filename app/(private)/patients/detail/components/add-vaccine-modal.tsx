@@ -5,6 +5,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { DateInput } from '@/app/components/date-input';
 import { Modal } from '@/app/components/modal';
+import { SelectInput } from '@/app/components/select-input';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -102,7 +103,7 @@ export function AddVaccineModal({ patientId, onClose, onSuccess }: AddVaccineMod
       await healthRecordsService.create(patientId, {
         type: 'VACCINE',
         date: new Date(date).toISOString(),
-        notes: notes || undefined,
+        ...(notes ? { notes } : {}),
         metadata: {
           vaccine_id: selectedVaccine.id,
           vaccine_name: selectedVaccine.name,
@@ -129,9 +130,9 @@ export function AddVaccineModal({ patientId, onClose, onSuccess }: AddVaccineMod
                 <p className="text-sm font-medium text-teal-800 dark:text-teal-300">{selectedVaccine.name}</p>
                 <p className="text-xs text-slate-500 dark:text-slate-400 font-mono">{selectedVaccine.code}</p>
               </div>
-              <button type="button" onClick={() => { setSelectedVaccine(null); setPreviousDoseDate(''); }} className="text-teal-600 hover:text-teal-800 dark:text-teal-400 text-xs underline">
+              <Button type="button" variant="link" size="sm" onClick={() => { setSelectedVaccine(null); setPreviousDoseDate(''); }} className="text-xs h-auto p-0">
                 Trocar
-              </button>
+              </Button>
             </div>
           ) : (
             <div ref={dropdownRef} className="relative mt-1.5">
@@ -154,10 +155,10 @@ export function AddVaccineModal({ patientId, onClose, onSuccess }: AddVaccineMod
                     <p className="p-3 text-sm text-slate-500 dark:text-slate-400 text-center">Nenhuma vacina no catálogo</p>
                   ) : (
                     catalogVaccines.map((v) => (
-                      <button key={v.id} type="button" onClick={() => { void handleSelectVaccine(v); }} className="w-full text-left px-3 py-2.5 text-sm hover:bg-slate-50 dark:hover:bg-slate-600 border-b border-slate-100 dark:border-slate-600 last:border-0 flex items-center justify-between">
+                      <Button key={v.id} type="button" variant="ghost" onClick={() => { void handleSelectVaccine(v); }} className="w-full justify-between px-3 py-2.5 h-auto rounded-none border-b border-slate-100 dark:border-slate-600 last:border-0">
                         <span className="font-medium text-slate-900 dark:text-white">{v.name}</span>
                         <span className="text-xs font-mono text-slate-400 dark:text-slate-500">{v.code}</span>
-                      </button>
+                      </Button>
                     ))
                   )}
                 </div>
@@ -174,22 +175,25 @@ export function AddVaccineModal({ patientId, onClose, onSuccess }: AddVaccineMod
 
         <div className="grid grid-cols-2 gap-3">
           <DateInput label="Data de Aplicação" value={date} onChange={setDate} required />
-          <div>
-            <Label htmlFor="vac-dose">Dose</Label>
-            <select id="vac-dose" value={doseNumber} onChange={(e) => setDoseNumber(e.target.value)} className="mt-1.5 w-full h-10 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 px-3 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-500">
-              <option>1ª Dose</option>
-              <option>2ª Dose</option>
-              <option>3ª Dose</option>
-              <option>4ª Dose</option>
-              <option>Reforço</option>
-              <option>Dose única</option>
-            </select>
-          </div>
+          <SelectInput
+            label="Dose"
+            value={doseNumber}
+            onChange={setDoseNumber}
+            options={[
+              { value: '1ª Dose', label: '1ª Dose' },
+              { value: '2ª Dose', label: '2ª Dose' },
+              { value: '3ª Dose', label: '3ª Dose' },
+              { value: '4ª Dose', label: '4ª Dose' },
+              { value: 'Reforço', label: 'Reforço' },
+              { value: 'Dose única', label: 'Dose única' },
+            ]}
+            required
+          />
         </div>
 
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <Label htmlFor="vac-batch">Lote</Label>
+            <Label htmlFor="vac-batch" required>Lote</Label>
             <Input id="vac-batch" placeholder="Ex: LOTE-2024-001" value={batch} onChange={(e) => setBatch(e.target.value)} className="mt-1.5" />
           </div>
           <DateInput
@@ -197,6 +201,7 @@ export function AddVaccineModal({ patientId, onClose, onSuccess }: AddVaccineMod
             value={previousDoseDate}
             onChange={setPreviousDoseDate}
             placeholder="dd/mm/aaaa"
+            required
           />
         </div>
 
@@ -219,7 +224,7 @@ export function AddVaccineModal({ patientId, onClose, onSuccess }: AddVaccineMod
         ) : null}
 
         <div>
-          <Label htmlFor="vac-applied-by">Aplicado por</Label>
+          <Label htmlFor="vac-applied-by" required>Aplicado por</Label>
           <Input id="vac-applied-by" placeholder="Ex: Dr. João Silva" value={appliedBy} onChange={(e) => setAppliedBy(e.target.value)} className="mt-1.5" />
         </div>
         <div>

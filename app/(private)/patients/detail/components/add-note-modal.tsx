@@ -36,7 +36,7 @@ export function AddNoteModal({ patientId, onClose, onSuccess }: AddNoteModalProp
     <Modal title="Nova Nota" onClose={onClose} maxWidth="sm">
       <form onSubmit={(e) => { void handleSubmit(e); }} className="space-y-4">
         <div>
-          <Label htmlFor="note-text">Nota / Observação</Label>
+          <Label htmlFor="note-text">Nota / Observação <span className="text-red-500">*</span></Label>
           <textarea
             id="note-text"
             placeholder="Escreva uma observação sobre o paciente..."

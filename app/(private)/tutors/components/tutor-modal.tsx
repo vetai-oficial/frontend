@@ -3,6 +3,7 @@
 import { Loader2, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
+import { InputWithLabel } from '@/app/components/input-with-label';
 import { Button } from '@/components/ui/button';
 import { tutorsService } from '@/services/tutors.service';
 import type { CreateTutorPayload, Tutor, UpdateTutorPayload } from '@/types/tutor';
@@ -16,10 +17,19 @@ interface TutorModalProps {
 export function TutorModal({ tutor, onClose, onSuccess }: TutorModalProps) {
   const isEdit = !!tutor;
   const [name, setName] = useState(tutor?.name ?? '');
+  const [cpf, setCpf] = useState(tutor?.cpf ?? '');
   const [phone, setPhone] = useState(tutor?.phone ?? '');
   const [email, setEmail] = useState(tutor?.email ?? '');
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  function formatCpf(value: string): string {
+    const digits = value.replace(/\D/g, '').slice(0, 11);
+    if (digits.length <= 3) return digits;
+    if (digits.length <= 6) return `${digits.slice(0, 3)}.${digits.slice(3)}`;
+    if (digits.length <= 9) return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6)}`;
+    return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6, 9)}-${digits.slice(9)}`;
+  }
 
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
@@ -30,6 +40,7 @@ export function TutorModal({ tutor, onClose, onSuccess }: TutorModalProps) {
   const handleSubmit = async () => {
     const errs: Record<string, string> = {};
     if (!name.trim()) errs.name = 'Nome é obrigatório';
+    if (!cpf.trim()) errs.cpf = 'CPF é obrigatório';
     if (Object.keys(errs).length > 0) { setErrors(errs); return; }
     setErrors({});
     setSaving(true);
@@ -37,12 +48,12 @@ export function TutorModal({ tutor, onClose, onSuccess }: TutorModalProps) {
     try {
       let result: Tutor;
       if (isEdit) {
-        const payload = { name: name.trim() } as UpdateTutorPayload;
+        const payload = { name: name.trim(), cpf: cpf.trim() } as UpdateTutorPayload;
         if (phone.trim()) payload.phone = phone.trim();
         if (email.trim()) payload.email = email.trim();
         result = await tutorsService.update(tutor.id, payload);
       } else {
-        const payload = { name: name.trim() } as CreateTutorPayload;
+        const payload = { name: name.trim(), cpf: cpf.trim() } as CreateTutorPayload;
         if (phone.trim()) payload.phone = phone.trim();
         if (email.trim()) payload.email = email.trim();
         result = await tutorsService.create(payload);
@@ -68,51 +79,49 @@ export function TutorModal({ tutor, onClose, onSuccess }: TutorModalProps) {
               {isEdit ? 'Atualize os dados do tutor' : 'Cadastre um novo tutor'}
             </p>
           </div>
-          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
-            <X size={18} className="text-slate-500" />
-          </button>
+          <Button variant="ghost" size="icon-sm" onClick={onClose} className="text-slate-500">
+            <X size={18} />
+          </Button>
         </div>
 
         <div className="p-5 space-y-4">
-          <div>
-            <label className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
-              Nome <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Ex: João Silva"
-              className={`w-full px-3 py-2.5 text-sm border rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500 ${errors.name ? 'border-red-400' : 'border-slate-200 dark:border-slate-600'}`}
-            />
-            {errors.name && <p className="text-xs text-red-500 mt-1">{errors.name}</p>}
-          </div>
+          <InputWithLabel
+            label="Nome"
+            required
+            type="text"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="Ex: João Silva"
+            error={errors.name}
+          />
 
-          <div>
-            <label className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
-              Telefone
-            </label>
-            <input
-              type="tel"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              placeholder="Ex: (11) 99999-9999"
-              className="w-full px-3 py-2.5 text-sm border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
-            />
-          </div>
+          <InputWithLabel
+            label="CPF"
+            required
+            type="text"
+            value={cpf}
+            onChange={(e) => setCpf(formatCpf(e.target.value))}
+            placeholder="Ex: 123.456.789-09"
+            error={errors.cpf}
+          />
 
-          <div>
-            <label className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
-              E-mail
-            </label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="Ex: joao@email.com"
-              className="w-full px-3 py-2.5 text-sm border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
-            />
-          </div>
+          <InputWithLabel
+            label="Telefone"
+            required
+            type="tel"
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
+            placeholder="Ex: (11) 99999-9999"
+          />
+
+          <InputWithLabel
+            label="E-mail"
+            required
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="Ex: joao@email.com"
+          />
 
           {errors.general && <p className="text-sm text-red-500">{errors.general}</p>}
         </div>

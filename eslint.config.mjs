@@ -1,5 +1,6 @@
 
 import pluginImport from 'eslint-plugin-import';
+import pluginReactHooks from 'eslint-plugin-react-hooks';
 import globals from 'globals';
 import tseslint from 'typescript-eslint';
 
@@ -15,7 +16,7 @@ const config = [
 
   {
     files: ['**/*.{js,mjs,cjs,ts,mts,cts,tsx}'],
-    plugins: { import: pluginImport },
+    plugins: { import: pluginImport, 'react-hooks': pluginReactHooks },
     languageOptions: {
       globals: {
         ...globals.browser,
@@ -55,7 +56,6 @@ const config = [
           varsIgnorePattern: '^_',
         },
       ],
-      '@typescript-eslint/no-explicit-any': 'off',
       '@typescript-eslint/explicit-member-accessibility': [
         'error',
         {
@@ -78,9 +78,16 @@ const config = [
           'newlines-between': 'always',
         },
       ],
+      'react-hooks/rules-of-hooks': 'error',
+      'react-hooks/exhaustive-deps': 'warn',
     },
   },
   ...tseslint.configs.recommended,
+  {
+    rules: {
+      '@typescript-eslint/no-explicit-any': 'off',
+    },
+  },
 ];
 
 export default config;

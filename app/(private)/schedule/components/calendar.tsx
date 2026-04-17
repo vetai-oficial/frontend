@@ -20,7 +20,7 @@ export function Calendar({ year, month, events, selectedDate, today, onSelectDat
   const eventsByDate: Record<string, ScheduleEvent[]> = {};
   for (const e of events) {
     if (!eventsByDate[e.date]) eventsByDate[e.date] = [];
-    eventsByDate[e.date].push(e);
+    eventsByDate[e.date]!.push(e);
   }
 
   const cells: (number | null)[] = [

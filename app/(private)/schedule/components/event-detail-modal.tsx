@@ -88,12 +88,13 @@ export function EventDetailModal({ event, onClose, onDelete, onEdit }: EventDeta
         </div>
 
         <div className="flex justify-between items-center pt-2 border-t border-slate-100 dark:border-slate-700">
-          <button
+          <Button
+            variant="ghost"
             onClick={handleDelete}
-            className="flex items-center gap-1.5 text-sm text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 font-medium transition-colors"
+            className="gap-1.5 text-red-600 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:text-red-300 dark:hover:bg-red-900/20"
           >
             <Trash2 size={15} /> Excluir
-          </button>
+          </Button>
           <div className="flex items-center gap-2">
             <Button variant="outline" onClick={onClose}>Fechar</Button>
             <Button

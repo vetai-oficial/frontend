@@ -17,7 +17,7 @@ function toDateStr(d: Date): string {
 }
 
 function parseMinutes(time: string): number {
-  const [h, m] = time.split(':').map(Number);
+  const [h = 0, m = 0] = time.split(':').map(Number);
   return h * 60 + m;
 }
 
@@ -40,7 +40,7 @@ export function WeekCalendar({ weekStart, events, today, startHour = DEFAULT_STA
   const eventsByDate: Record<string, ScheduleEvent[]> = {};
   for (const e of events) {
     if (!eventsByDate[e.date]) eventsByDate[e.date] = [];
-    eventsByDate[e.date].push(e);
+    eventsByDate[e.date]!.push(e);
   }
 
   const totalHours = endHour - startHour;
@@ -150,7 +150,7 @@ export function WeekCalendar({ weekStart, events, today, startHour = DEFAULT_STA
                       <p className="text-[10px] font-semibold leading-snug truncate">{ev.title}</p>
                       {height >= 32 && (
                         <p className="text-[9px] opacity-75 leading-snug truncate">
-                          {ev.startTime}{ev.endTime ? `–${ev.endTime}` : ''}
+                          {ev.startTime}{ev.endTime ? ` – ${ev.endTime}` : ''}
                           {ev.patientName ? ` · ${ev.patientName}` : ''}
                         </p>
                       )}

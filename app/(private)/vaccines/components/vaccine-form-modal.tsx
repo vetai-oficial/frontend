@@ -1,9 +1,10 @@
 'use client';
 
 import { Loader2 } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 
 import { Modal } from '@/app/components/modal';
+import { SelectInput } from '@/app/components/select-input';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -30,16 +31,6 @@ export function VaccineFormModal({ vaccine, onClose, onSuccess }: VaccineFormMod
   const isEdit = !!vaccine;
   const [name, setName] = useState(vaccine?.name ?? '');
   const [period, setPeriod] = useState<number | undefined>(vaccine?.revaccination_period_days);
-  const [isDark, setIsDark] = useState(false);
-
-  useEffect(() => {
-    const root = document.documentElement;
-    setIsDark(root.classList.contains('dark'));
-    const observer = new MutationObserver(() => setIsDark(root.classList.contains('dark')));
-    observer.observe(root, { attributes: true, attributeFilter: ['class'] });
-    return () => observer.disconnect();
-  }, []);
-
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
 
@@ -49,9 +40,9 @@ export function VaccineFormModal({ vaccine, onClose, onSuccess }: VaccineFormMod
     setSaving(true);
     try {
       if (isEdit) {
-        await vaccinesService.update(vaccine.id, { name: name.trim(), revaccination_period_days: period });
+        await vaccinesService.update(vaccine.id, { name: name.trim(), ...(period !== undefined ? { revaccination_period_days: period } : {}) });
       } else {
-        await vaccinesService.create({ name: name.trim(), revaccination_period_days: period });
+        await vaccinesService.create({ name: name.trim(), ...(period !== undefined ? { revaccination_period_days: period } : {}) });
       }
       onSuccess();
     } catch {
@@ -85,20 +76,15 @@ export function VaccineFormModal({ vaccine, onClose, onSuccess }: VaccineFormMod
         </div>
 
         <div>
-          <Label htmlFor="vaccine-period">Período de Revacinação</Label>
-          <select
-            id="vaccine-period"
-            value={period ?? ''}
-            onChange={(e) => setPeriod(e.target.value ? Number(e.target.value) : undefined)}
-            style={{ colorScheme: isDark ? 'dark' : 'light' }}
-            className="mt-1.5 w-full h-10 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 px-3 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
-          >
-            {PERIOD_OPTIONS.map((opt) => (
-              <option key={opt.value ?? 'none'} value={opt.value ?? ''}>
-                {opt.label}
-              </option>
-            ))}
-          </select>
+          <SelectInput
+            label="Período de Revacinação"
+            value={period !== undefined ? String(period) : ''}
+            onChange={(v) => setPeriod(v ? Number(v) : undefined)}
+            options={PERIOD_OPTIONS.map((opt) => ({
+              value: opt.value !== undefined ? String(opt.value) : '',
+              label: opt.label,
+            }))}
+          />
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
             Usado para calcular automaticamente a próxima revacinação ao registrar uma dose.
           </p>

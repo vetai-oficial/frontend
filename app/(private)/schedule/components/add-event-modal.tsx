@@ -6,7 +6,10 @@ import { useEffect, useRef, useState } from 'react';
 import { toLocalDateStr } from '../utils';
 
 import { Modal } from '@/app/components/modal';
+import { SelectInput } from '@/app/components/select-input';
+import { TimeInput } from '@/app/components/time-input';
 import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
 import { patientsService } from '@/services/patients.service';
 import { scheduleService } from '@/services/schedule.service';
 import { tutorsService } from '@/services/tutors.service';
@@ -36,7 +39,7 @@ function maskDateInput(raw: string): string {
   return `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4)}`;
 }
 
-interface ComboBoxItem { id: string; label: string; sub?: string }
+interface ComboBoxItem { id: string; label: string; sub?: string | undefined }
 
 interface ComboBoxProps {
   placeholder: string;
@@ -74,9 +77,9 @@ function ComboBox({
           <span className="text-teal-600 dark:text-teal-400 shrink-0">{icon}</span>
           <span className="flex-1 text-sm font-medium text-slate-900 dark:text-white truncate">{value.label}</span>
           {value.sub && <span className="text-xs text-slate-500 dark:text-slate-400 truncate shrink-0">{value.sub}</span>}
-          <button type="button" onClick={onClear} className="shrink-0 text-slate-400 hover:text-red-500 transition-colors">
+          <Button type="button" variant="ghost" size="icon-sm" onClick={onClear} className="shrink-0 text-slate-400 hover:text-red-500">
             <X size={14} />
-          </button>
+          </Button>
         </div>
       ) : (
         <div className="relative">
@@ -102,18 +105,19 @@ function ComboBox({
             </p>
           ) : (
             results.map((r) => (
-              <button
+              <Button
                 key={r.id}
                 type="button"
+                variant="ghost"
                 onMouseDown={(e) => { e.preventDefault(); onSelect(r); onOpenChange(false); }}
-                className="flex items-center gap-2 w-full px-3 py-2 text-left hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
+                className="w-full justify-start px-3 py-2 h-auto rounded-none"
               >
                 <Check size={12} className="text-teal-500 opacity-0 group-hover:opacity-100" />
-                <div className="min-w-0">
+                <div className="min-w-0 text-left">
                   <p className="text-sm text-slate-900 dark:text-white truncate">{r.label}</p>
                   {r.sub && <p className="text-xs text-slate-500 dark:text-slate-400 truncate">{r.sub}</p>}
                 </div>
-              </button>
+              </Button>
             ))
           )}
         </div>
@@ -132,13 +136,15 @@ interface EventFormState {
 }
 
 interface AddEventModalProps {
-  initialDate?: string; // YYYY-MM-DD
+  initialDate?: string | undefined; // YYYY-MM-DD
   event?: ScheduleEvent; // if provided → edit mode
   onClose: () => void;
   onSave: (event: ScheduleEvent) => void;
+  minHour?: number;
+  maxHour?: number;
 }
 
-export function AddEventModal({ initialDate, event: editingEvent, onClose, onSave }: AddEventModalProps) {
+export function AddEventModal({ initialDate, event: editingEvent, onClose, onSave, minHour = 0, maxHour = 23 }: AddEventModalProps) {
   const isEditing = !!editingEvent;
 
   const [form, setForm] = useState<EventFormState>({
@@ -243,13 +249,13 @@ export function AddEventModal({ initialDate, event: editingEvent, onClose, onSav
 
     const payload = {
       title: form.title.trim(),
-      description: form.description.trim() || undefined,
+      ...(form.description.trim() ? { description: form.description.trim() } : {}),
       date: internalDate,
       startTime: form.startTime,
-      endTime: form.endTime || undefined,
+      ...(form.endTime ? { endTime: form.endTime } : {}),
       type: form.type,
-      patientName: selectedPatient?.label.trim() || undefined,
-      tutorName: selectedTutor?.label.trim() || undefined,
+      ...(selectedPatient?.label.trim() ? { patientName: selectedPatient.label.trim() } : {}),
+      ...(selectedTutor?.label.trim() ? { tutorName: selectedTutor.label.trim() } : {}),
     };
 
     const saved = isEditing
@@ -261,14 +267,12 @@ export function AddEventModal({ initialDate, event: editingEvent, onClose, onSav
 
   const inputCls =
     'w-full rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 px-3 py-2 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500';
-  const labelCls = 'block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1';
-
   return (
     <Modal title={isEditing ? 'Editar Evento' : 'Novo Evento'} description="Preencha os dados do agendamento" onClose={onClose} maxWidth="md">
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
 
         <div>
-          <label className={labelCls}>Título *</label>
+          <Label required className="mb-1.5">Título</Label>
           <input
             className={inputCls}
             placeholder="Ex: Consulta de rotina"
@@ -279,7 +283,7 @@ export function AddEventModal({ initialDate, event: editingEvent, onClose, onSav
 
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className={labelCls}>Data *</label>
+            <Label required className="mb-1.5">Data</Label>
             <input
               className={inputCls}
               placeholder="dd/mm/aaaa"
@@ -290,42 +294,39 @@ export function AddEventModal({ initialDate, event: editingEvent, onClose, onSav
             />
           </div>
           <div>
-            <label className={labelCls}>Tipo</label>
-            <select
-              className={inputCls}
+            <Label required className="mb-1.5">Tipo</Label>
+            <SelectInput
               value={form.type}
-              onChange={(e) => set('type', e.target.value as EventType)}
-            >
-              {(Object.keys(EVENT_TYPE_MAP) as EventType[]).map((t) => (
-                <option key={t} value={t}>{EVENT_TYPE_MAP[t].label}</option>
-              ))}
-            </select>
+              onChange={(v) => set('type', v as EventType)}
+              options={(Object.keys(EVENT_TYPE_MAP) as EventType[]).map((t) => ({
+                value: t,
+                label: EVENT_TYPE_MAP[t].label,
+              }))}
+            />
           </div>
         </div>
 
         <div className="grid grid-cols-2 gap-3">
-          <div>
-            <label className={labelCls}>Horário início *</label>
-            <input
-              type="time"
-              className={inputCls}
-              value={form.startTime}
-              onChange={(e) => set('startTime', e.target.value)}
-            />
-          </div>
-          <div>
-            <label className={labelCls}>Horário fim</label>
-            <input
-              type="time"
-              className={inputCls}
-              value={form.endTime}
-              onChange={(e) => set('endTime', e.target.value)}
-            />
-          </div>
+          <TimeInput
+            label="Horário início"
+            required
+            value={form.startTime}
+            onChange={(v) => set('startTime', v)}
+            minHour={minHour}
+            maxHour={maxHour}
+          />
+          <TimeInput
+            label="Horário fim"
+            required
+            value={form.endTime}
+            onChange={(v) => set('endTime', v)}
+            minHour={minHour}
+            maxHour={maxHour}
+          />
         </div>
 
         <div>
-          <label className={labelCls}>Paciente</label>
+          <Label required className="mb-1.5">Paciente</Label>
           <ComboBox
             placeholder="Buscar paciente…"
             icon={<PawPrint size={14} />}
@@ -343,7 +344,7 @@ export function AddEventModal({ initialDate, event: editingEvent, onClose, onSav
         </div>
 
         <div>
-          <label className={labelCls}>Tutor</label>
+          <Label required className="mb-1.5">Tutor</Label>
           <ComboBox
             placeholder="Buscar tutor…"
             icon={<User size={14} />}
@@ -361,7 +362,7 @@ export function AddEventModal({ initialDate, event: editingEvent, onClose, onSav
         </div>
 
         <div>
-          <label className={labelCls}>Descrição</label>
+          <Label className="mb-1.5">Descrição</Label>
           <textarea
             className={`${inputCls} resize-none`}
             rows={3}

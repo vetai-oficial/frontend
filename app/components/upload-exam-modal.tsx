@@ -143,32 +143,25 @@ export function UploadExamModal({
               Faça o upload do PDF do exame para análise automática
             </p>
           </div>
-          <button
-            onClick={onClose}
-            className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
-          >
-            <X size={18} className="text-slate-500" />
-          </button>
+          <Button variant="ghost" size="icon-sm" onClick={onClose} className="text-slate-500">
+            <X size={18} />
+          </Button>
         </div>
 
         <div className="p-5 space-y-4">
           {!preselectedPatient && (
             <div>
               <label className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-2 block">
-                Paciente
+                Paciente <span className="text-red-500">*</span>
               </label>
               {selectedPatient ? (
                 <div className="flex items-center justify-between p-3 bg-teal-50 dark:bg-teal-900/20 border border-teal-200 dark:border-teal-700 rounded-lg">
                   <span className="text-sm font-medium text-teal-800 dark:text-teal-300">
                     {selectedPatient.name}
                   </span>
-                  <button
-                    type="button"
-                    onClick={() => setSelectedPatient(null)}
-                    className="text-teal-600 hover:text-teal-800 dark:text-teal-400 dark:hover:text-teal-200"
-                  >
+                  <Button type="button" variant="ghost" size="icon-sm" onClick={() => setSelectedPatient(null)} className="text-teal-600 hover:text-teal-800 dark:text-teal-400 dark:hover:text-teal-200">
                     <X size={14} />
-                  </button>
+                  </Button>
                 </div>
               ) : (
                 <div ref={dropdownRef} className="relative">
@@ -198,15 +191,16 @@ export function UploadExamModal({
                         </p>
                       ) : (
                         patients.map((patient) => (
-                          <button
+                          <Button
                             key={patient.id}
                             type="button"
+                            variant="ghost"
                             onClick={() => {
                               setSelectedPatient(patient);
                               setShowDropdown(false);
                               setPatientSearch('');
                             }}
-                            className="w-full text-left px-3 py-2.5 text-sm text-slate-900 dark:text-white hover:bg-slate-50 dark:hover:bg-slate-600 transition-colors border-b border-slate-100 dark:border-slate-600 last:border-0"
+                            className="w-full justify-start px-3 py-2.5 h-auto rounded-none text-sm text-slate-900 dark:text-white border-b border-slate-100 dark:border-slate-600 last:border-0"
                           >
                             <span className="font-medium">{patient.name}</span>
                             {patient.breed && (
@@ -214,7 +208,7 @@ export function UploadExamModal({
                                 · {patient.breed}
                               </span>
                             )}
-                          </button>
+                          </Button>
                         ))
                       )}
                     </div>
@@ -254,6 +248,7 @@ export function UploadExamModal({
               label="Data do exame"
               value={examDate}
               onChange={setExamDate}
+              required
             />
           </div>
 

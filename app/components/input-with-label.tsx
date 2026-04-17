@@ -15,20 +15,21 @@ import { cn } from '@/infra/utils';
 
 export interface InputWithLabelProps extends React.ComponentProps<'input'> {
   label?: string
+  required?: boolean
   tooltip?: string
-  error?: string
+  error?: string | undefined
   containerClassName?: string
 }
 
 const InputWithLabel = React.forwardRef<HTMLInputElement, InputWithLabelProps>(
-  ({ className, label, tooltip, error, containerClassName, ...props }, ref) => {
+  ({ className, label, required, tooltip, error, containerClassName, ...props }, ref) => {
     const [open, setOpen] = React.useState(false);
 
     return (
       <div className={cn('w-full', containerClassName)}>
         {label && (
           <div className="flex items-center gap-2 mb-2">
-            <Label className="text-sm font-medium text-slate-700 dark:text-slate-300">
+            <Label {...(required ? { required } : {})} className="text-sm font-medium text-slate-700 dark:text-slate-300">
               {label}
             </Label>
             {tooltip && (
@@ -55,8 +56,7 @@ const InputWithLabel = React.forwardRef<HTMLInputElement, InputWithLabelProps>(
         )}
         <Input
           className={cn(
-            'p-3 h-auto focus-visible:ring-teal-500 focus-visible:border-teal-500',
-            error && 'border-red-500 dark:border-red-500 focus-visible:ring-red-500 focus-visible:border-red-500',
+            error && 'border-red-400 dark:border-red-500 focus-visible:ring-red-500 focus-visible:border-red-500',
             className,
           )}
           ref={ref}

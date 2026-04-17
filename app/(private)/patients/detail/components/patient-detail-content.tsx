@@ -6,6 +6,8 @@ import {
   CalendarClock,
   ClipboardList,
   Cpu,
+  Download,
+  Eye,
   FileText,
   Loader2,
   Mars,
@@ -23,6 +25,7 @@ import {
   Upload,
   User,
   Venus,
+  X,
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -84,6 +87,8 @@ export function PatientDetailContent() {
   const [showAddPrescription, setShowAddPrescription] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [uploadingDoc, setUploadingDoc] = useState(false);
+  const [viewingDoc, setViewingDoc] = useState<{ url: string; mimeType: string; fileName: string } | null>(null);
+  const [loadingDocId, setLoadingDocId] = useState<string | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<{ onConfirm: () => Promise<void> } | null>(null);
   const [confirmDeleting, setConfirmDeleting] = useState(false);
 
@@ -238,6 +243,30 @@ export function PatientDetailContent() {
     void fetchDocuments();
   };
 
+  const handleViewDocument = async (doc: { id: string; fileName: string; mimeType: string }) => {
+    if (!id) return;
+    setLoadingDocId(doc.id);
+    try {
+      const { url, mimeType } = await documentsService.download(id, doc.id);
+      const isPdf = mimeType.includes('pdf');
+      const isImage = mimeType.startsWith('image/');
+      if (isPdf || isImage) {
+        setViewingDoc({ url, mimeType, fileName: doc.fileName });
+      } else {
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = doc.fileName;
+        a.click();
+        setTimeout(() => URL.revokeObjectURL(url), 10000);
+      }
+    } catch { /* silently fail */ } finally { setLoadingDocId(null); }
+  };
+
+  const closeDocViewer = () => {
+    if (viewingDoc) URL.revokeObjectURL(viewingDoc.url);
+    setViewingDoc(null);
+  };
+
   const handleConfirmDelete = async () => {
     if (!deleteConfirm) return;
     setConfirmDeleting(true);
@@ -367,7 +396,7 @@ export function PatientDetailContent() {
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-slate-900 dark:text-white truncate">{ev.title}</p>
                     <p className="text-xs text-slate-500 dark:text-slate-400">
-                      {dateLabel} · {ev.startTime}{ev.endTime ? `–${ev.endTime}` : ''}
+                      {dateLabel} · {ev.startTime}{ev.endTime ? ` – ${ev.endTime}` : ''}
                     </p>
                   </div>
                   <span className={`text-[11px] font-medium px-2 py-0.5 rounded-full border shrink-0 ${typeStyle.bg} ${typeStyle.color}`}>
@@ -574,7 +603,7 @@ export function PatientDetailContent() {
             ) : (
               <div className="space-y-3">
                 {prescriptions.map((rec) => {
-                  const meta = rec.metadata as PrescriptionMetadata;
+                  const meta = rec.metadata as unknown as PrescriptionMetadata;
                   return (
                     <Card key={rec.id} className="p-4">
                       <div className="flex items-start justify-between gap-3">
@@ -681,18 +710,54 @@ export function PatientDetailContent() {
                         <p className="text-xs text-slate-500 dark:text-slate-400">{fmtDate(doc.created_at)}</p>
                       </div>
                     </div>
-                    <button
-                      onClick={() => setDeleteConfirm({ onConfirm: () => handleDeleteDocument(doc.id) })}
-                      className="p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 text-slate-400 hover:text-red-500 transition-colors shrink-0"
-                    >
-                      <Trash2 size={14} />
-                    </button>
+                    <div className="flex items-center gap-1 shrink-0">
+                      <Button
+                        variant="ghost"
+                        size="icon-sm"
+                        onClick={() => { void handleViewDocument(doc); }}
+                        disabled={loadingDocId === doc.id}
+                        className="text-slate-400 hover:text-teal-600 hover:bg-teal-50 dark:hover:bg-teal-900/20"
+                        title={doc.mimeType.startsWith('image/') || doc.mimeType.includes('pdf') ? 'Visualizar' : 'Baixar'}
+                      >
+                        {loadingDocId === doc.id
+                          ? <Loader2 size={14} className="animate-spin" />
+                          : doc.mimeType.startsWith('image/') || doc.mimeType.includes('pdf')
+                            ? <Eye size={14} />
+                            : <Download size={14} />}
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon-sm"
+                        onClick={() => setDeleteConfirm({ onConfirm: () => handleDeleteDocument(doc.id) })}
+                        className="text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20"
+                      >
+                        <Trash2 size={14} />
+                      </Button>
+                    </div>
                   </div>
                 ))}
               </div>
             )}
         </SectionCard>
       </div>
+
+      {viewingDoc && (
+        <div className="fixed inset-0 z-50 flex flex-col bg-black/80">
+          <div className="flex items-center justify-between px-4 py-3 bg-slate-900 shrink-0">
+            <p className="text-white font-medium text-sm truncate">{viewingDoc.fileName}</p>
+            <Button variant="ghost" size="icon-sm" onClick={closeDocViewer} className="text-slate-300 hover:text-white shrink-0">
+              <X size={18} />
+            </Button>
+          </div>
+          {viewingDoc.mimeType.startsWith('image/') ? (
+            <div className="flex-1 flex items-center justify-center p-4 overflow-auto">
+              <img src={viewingDoc.url} alt={viewingDoc.fileName} className="max-w-full max-h-full object-contain rounded" />
+            </div>
+          ) : (
+            <iframe src={viewingDoc.url} className="flex-1 w-full border-0" title={viewingDoc.fileName} />
+          )}
+        </div>
+      )}
 
       {deleteConfirm && (
         <ConfirmModal

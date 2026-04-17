@@ -88,13 +88,15 @@ export function AddPrescriptionModal({ patientId, onClose, onSuccess }: AddPresc
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <Label>Medicamentos</Label>
-            <button
+            <Button
               type="button"
+              variant="ghost"
+              size="sm"
               onClick={addMedication}
-              className="flex items-center gap-1.5 text-xs font-medium text-teal-600 dark:text-teal-400 hover:text-teal-700 dark:hover:text-teal-300 transition-colors"
+              className="gap-1.5 text-xs text-teal-600 dark:text-teal-400 hover:text-teal-700 hover:bg-teal-50 dark:hover:text-teal-300 dark:hover:bg-teal-900/20"
             >
               <Plus size={14} /> Adicionar medicamento
-            </button>
+            </Button>
           </div>
 
           {medications.map((med, i) => (
@@ -104,33 +106,35 @@ export function AddPrescriptionModal({ patientId, onClose, onSuccess }: AddPresc
                   Medicamento {i + 1}
                 </span>
                 {medications.length > 1 && (
-                  <button
+                  <Button
                     type="button"
+                    variant="ghost"
+                    size="icon-sm"
                     onClick={() => removeMedication(i)}
-                    className="p-1 rounded hover:bg-red-50 dark:hover:bg-red-900/20 text-slate-400 hover:text-red-500 transition-colors"
+                    className="text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20"
                   >
                     <X size={14} />
-                  </button>
+                  </Button>
                 )}
               </div>
 
               <div className="grid grid-cols-3 gap-3">
                 <div className="col-span-1">
-                  <Label htmlFor={`drug-${i}`}>Medicamento *</Label>
+                  <Label htmlFor={`drug-${i}`}>Medicamento <span className="text-red-500">*</span></Label>
                   <input id={`drug-${i}`} value={med.drug} onChange={(e) => updateMedication(i, 'drug', e.target.value)} placeholder="Ex: Amoxicilina" className={inputCls} required />
                 </div>
                 <div>
-                  <Label htmlFor={`form-${i}`}>Forma</Label>
+                  <Label htmlFor={`form-${i}`} required>Forma</Label>
                   <input id={`form-${i}`} value={med.form} onChange={(e) => updateMedication(i, 'form', e.target.value)} placeholder="Ex: Comprimido" className={inputCls} />
                 </div>
                 <div>
-                  <Label htmlFor={`qty-${i}`}>Quantidade</Label>
-                  <input id={`qty-${i}`} value={med.quantity} onChange={(e) => updateMedication(i, 'quantity', e.target.value)} placeholder="Ex: 500mg" className={inputCls} />
+                  <Label htmlFor={`qty-${i}`} required>Quantidade</Label>
+                  <input id={`qty-${i}`} value={med.quantity} onChange={(e) => updateMedication(i, 'quantity', e.target.value)} placeholder="Ex: 500mg" className={inputCls} required />
                 </div>
               </div>
 
               <div>
-                <Label htmlFor={`pos-${i}`}>Posologia *</Label>
+                <Label htmlFor={`pos-${i}`}>Posologia <span className="text-red-500">*</span></Label>
                 <textarea
                   id={`pos-${i}`}
                   value={med.posology}

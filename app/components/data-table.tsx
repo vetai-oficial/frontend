@@ -15,9 +15,10 @@ interface DataTableProps {
   actions?: ReactNode;
   centerHeaders?: boolean;
   columnWidths?: string[];
+  className?: string;
 }
 
-export function DataTable({ headers, children, showSearch = false, onSearch, searchPlaceholder = 'Buscar...', actions, centerHeaders = false, columnWidths }: DataTableProps) {
+export function DataTable({ headers, children, showSearch = false, onSearch, searchPlaceholder = 'Buscar...', actions, centerHeaders = false, columnWidths, className }: DataTableProps) {
   const [searchValue, setSearchValue] = useState('');
 
   const handleSearch = (value: string) => {
@@ -26,9 +27,9 @@ export function DataTable({ headers, children, showSearch = false, onSearch, sea
   };
 
   return (
-    <Card className="overflow-hidden">
+    <Card className={`overflow-hidden flex flex-col${className ? ` ${className}` : ''}`}>
       {(showSearch || actions) && (
-        <div className="p-4 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center">
+        <div className="p-4 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center shrink-0">
           {actions && <div>{actions}</div>}
           {showSearch && (
             <div className="relative w-85">
@@ -44,7 +45,7 @@ export function DataTable({ headers, children, showSearch = false, onSearch, sea
           )}
         </div>
       )}
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto flex-1">
         <table className="w-full text-left text-sm">
           <thead className="bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700 text-slate-500">
             <tr>
@@ -59,7 +60,7 @@ export function DataTable({ headers, children, showSearch = false, onSearch, sea
               ))}
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
+          <tbody className="divide-y divide-slate-200 dark:divide-slate-700 [&>tr:last-child]:border-b [&>tr:last-child]:border-slate-200 dark:[&>tr:last-child]:border-slate-700">
             {children}
           </tbody>
         </table>

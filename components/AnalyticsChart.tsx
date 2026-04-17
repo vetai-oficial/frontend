@@ -77,16 +77,16 @@ export function AnalyticsChart({
       type === 'doughnut'
         ? undefined
         : {
-            x: {
-              grid: { display: false },
-              ticks: { color: '#64748b' },
-            },
-            y: {
-              grid: { color: 'rgba(0, 0, 0, 0.05)' },
-              ticks: { color: '#64748b' },
-              beginAtZero: true,
-            },
+          x: {
+            grid: { display: false },
+            ticks: { color: '#64748b' },
           },
+          y: {
+            grid: { color: 'rgba(0, 0, 0, 0.05)' },
+            ticks: { color: '#64748b' },
+            beginAtZero: true,
+          },
+        },
   };
 
   const renderChart = () => {
@@ -102,19 +102,19 @@ export function AnalyticsChart({
     }
 
     switch (type) {
-      case 'line':
-        return <Line data={data} options={commonOptions} height={height} />;
-      case 'bar':
-        return <Bar data={data} options={commonOptions} height={height} />;
-      case 'doughnut':
-        return <Doughnut data={data} options={commonOptions} height={height} />;
-      default:
-        return null;
+    case 'line':
+      return <Line data={data} options={commonOptions} height={height} />;
+    case 'bar':
+      return <Bar data={data} options={commonOptions} height={height} />;
+    case 'doughnut':
+      return <Doughnut data={data} options={commonOptions} height={height} />;
+    default:
+      return null;
     }
   };
 
   return (
-    <SectionCard title={title} subtitle={subtitle} className={className}>
+    <SectionCard title={title} {...(subtitle ? { subtitle } : {})} {...(className ? { className } : {})}>
       <div className='w-full mt-4' style={{ height }}>
         {renderChart()}
       </div>

@@ -9,6 +9,7 @@ import {
 import { useEffect } from 'react';
 
 import { Badge } from '@/app/components/badge';
+import { Button } from '@/components/ui/button';
 import type { ConsultationDisease } from '@/types/consultation';
 
 interface DiseaseDetailModalProps {
@@ -80,12 +81,9 @@ export function DiseaseDetailModal({
               </div>
             </div>
           </div>
-          <button
-            onClick={onClose}
-            className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
-          >
-            <X size={18} className="text-slate-500" />
-          </button>
+          <Button variant="ghost" size="icon-sm" onClick={onClose} className="text-slate-500">
+            <X size={18} />
+          </Button>
         </div>
 
         <div className="p-5 space-y-5">

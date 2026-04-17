@@ -1,6 +1,6 @@
 'use client';
 
-import { AlertTriangle, ArrowLeft, CheckCircle2, Loader2, Microscope, ShieldCheck, X } from 'lucide-react';
+import { AlertTriangle, ArrowLeft, CheckCircle2, FileText, Loader2, Microscope, ShieldCheck, X } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
@@ -24,6 +24,8 @@ export function ExamDetailContent() {
   const [study, setStudy] = useState<Study | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedValue, setSelectedValue] = useState<AlteredValueInfo | null>(null);
+  const [pdfUrl, setPdfUrl] = useState<string | null>(null);
+  const [loadingPdf, setLoadingPdf] = useState(false);
 
   const fetchStudy = useCallback(async () => {
     if (!id) return;
@@ -64,6 +66,29 @@ export function ExamDetailContent() {
   const hasAlteredValues = study?.results.some((r) =>
     r.values.some((v) => v.status === 'HIGHER' || v.status === 'LOWER'),
   ) ?? false;
+
+  const openPdf = async () => {
+    if (!id) return;
+    setLoadingPdf(true);
+    try {
+      const { pdfBase64 } = await studiesService.getPdf(id);
+      const binary = atob(pdfBase64);
+      const bytes = new Uint8Array(binary.length);
+      for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+      const blob = new Blob([bytes], { type: 'application/pdf' });
+      const url = URL.createObjectURL(blob);
+      setPdfUrl(url);
+    } catch {
+      // silently fail
+    } finally {
+      setLoadingPdf(false);
+    }
+  };
+
+  const closePdf = () => {
+    if (pdfUrl) URL.revokeObjectURL(pdfUrl);
+    setPdfUrl(null);
+  };
 
   if (loading) {
     return (
@@ -117,6 +142,15 @@ export function ExamDetailContent() {
           </p>
         </div>
         <div className="flex items-center gap-3">
+          <Button
+            variant="outline"
+            onClick={() => { void openPdf(); }}
+            disabled={loadingPdf}
+            className="gap-2"
+          >
+            {loadingPdf ? <Loader2 size={16} className="animate-spin" /> : <FileText size={16} />}
+            Visualizar exame
+          </Button>
           {study.status === 'COMPLETED' && hasAlteredValues && (
             <Button
               onClick={() => router.push(`/exams/prevention?id=${study.id}`)}
@@ -224,6 +258,22 @@ export function ExamDetailContent() {
         </Card>
       )}
 
+      {pdfUrl && (
+        <div className="fixed inset-0 z-50 flex flex-col bg-black/80">
+          <div className="flex items-center justify-between px-4 py-3 bg-slate-900 shrink-0">
+            <p className="text-white font-medium text-sm">{study.title ?? 'Exame'}</p>
+            <Button variant="ghost" size="icon-sm" onClick={closePdf} className="text-slate-300 hover:text-white">
+              <X size={18} />
+            </Button>
+          </div>
+          <iframe
+            src={pdfUrl}
+            className="flex-1 w-full border-0"
+            title="Visualizar exame"
+          />
+        </div>
+      )}
+
       {selectedValue && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setSelectedValue(null)} />
@@ -239,9 +289,9 @@ export function ExamDetailContent() {
                   {selectedValue.value}{selectedValue.unit ? ` ${selectedValue.unit}` : ''}
                 </p>
               </div>
-              <button onClick={() => setSelectedValue(null)} className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors shrink-0">
-                <X size={18} className="text-slate-500" />
-              </button>
+              <Button variant="ghost" size="icon-sm" onClick={() => setSelectedValue(null)} className="text-slate-500 shrink-0">
+                <X size={18} />
+              </Button>
             </div>
 
             <div className="p-5 space-y-4">

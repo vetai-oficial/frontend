@@ -5,6 +5,7 @@ import { useState } from 'react';
 
 import { DateInput } from '@/app/components/date-input';
 import { Modal } from '@/app/components/modal';
+import { SelectInput } from '@/app/components/select-input';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -31,7 +32,7 @@ export function AddWeightModal({ patientId, onClose, onSuccess }: AddWeightModal
       await healthRecordsService.create(patientId, {
         type: 'WEIGHT',
         date: new Date(date).toISOString(),
-        notes: notes || undefined,
+        ...(notes ? { notes } : {}),
         metadata: { value: parseFloat(value), unit },
       });
       onSuccess();
@@ -43,15 +44,19 @@ export function AddWeightModal({ patientId, onClose, onSuccess }: AddWeightModal
       <form onSubmit={(e) => { void handleSubmit(e); }} className="space-y-4">
         <div className="flex gap-3">
           <div className="flex-1">
-            <Label htmlFor="w-value">Peso</Label>
+            <Label htmlFor="w-value">Peso <span className="text-red-500">*</span></Label>
             <Input id="w-value" type="number" step="0.01" min="0" placeholder="Ex: 12.5" value={value} onChange={(e) => setValue(e.target.value)} required className="mt-1.5" />
           </div>
           <div className="w-24">
-            <Label htmlFor="w-unit">Unidade</Label>
-            <select id="w-unit" value={unit} onChange={(e) => setUnit(e.target.value as 'KG' | 'G')} className="mt-1.5 w-full h-9 rounded-md border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 px-3 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-500">
-              <option value="KG">kg</option>
-              <option value="G">g</option>
-            </select>
+            <SelectInput
+              label="Unidade"
+              value={unit}
+              onChange={(v) => setUnit(v as 'KG' | 'G')}
+              options={[
+                { value: 'KG', label: 'kg' },
+                { value: 'G', label: 'g' },
+              ]}
+            />
           </div>
         </div>
         <DateInput label="Data" value={date} onChange={setDate} required />

@@ -1,6 +1,7 @@
 'use client';
 
-import { Microscope, PawPrint, RefreshCcw } from 'lucide-react';
+import { CalendarCheck, Microscope, PawPrint, RefreshCcw } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
 
 import { Badge } from '@/app/components/badge';
@@ -10,17 +11,33 @@ import { SectionCard } from '@/app/components/section-card';
 import { AnalyticsChart } from '@/components/AnalyticsChart';
 import { MetricCard } from '@/components/MetricCard';
 import { Button } from '@/components/ui/button';
-import { STUDY_STATUS_MAP } from '@/constants';
+import { SPECIE_LABELS, STUDY_STATUS_MAP } from '@/constants';
 import { cn } from '@/infra/utils';
 import type { DashboardData } from '@/services/analytics.service';
 import { analyticsService } from '@/services/analytics.service';
+import { scheduleService } from '@/services/schedule.service';
+import type { ScheduleEvent } from '@/types/schedule';
+import { EVENT_TYPE_MAP } from '@/types/schedule';
 import type { StudyStatus } from '@/types/study';
 
 const STATUS_MAP = STUDY_STATUS_MAP;
 
+function fmtDate(val: string | undefined | null): string {
+  if (!val) return '-';
+  const d = new Date(val);
+  return isNaN(d.getTime()) ? '-' : d.toLocaleDateString('pt-BR');
+}
+
+function todayIso(): string {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
 export default function Dashboard() {
+  const router = useRouter();
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [todayEvents, setTodayEvents] = useState<ScheduleEvent[]>([]);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -32,6 +49,11 @@ export default function Dashboard() {
     } finally {
       setLoading(false);
     }
+  }, []);
+
+  useEffect(() => {
+    const events = scheduleService.listByDate(todayIso());
+    setTodayEvents(events.sort((a, b) => a.startTime.localeCompare(b.startTime)));
   }, []);
 
   const patients = data?.latest_patients ?? [];
@@ -100,18 +122,74 @@ export default function Dashboard() {
       </div>
 
       <div className='grid grid-cols-1 lg:grid-cols-2 gap-8'>
-        {/* Overtime Chart */}
-        {data?.growth_overtime && (
-          <AnalyticsChart
-            type='line'
-            title='Crescimento ao Longo do Tempo'
-            subtitle='Comparativo de novos pacientes e consultas realizadas'
-            data={data.growth_overtime}
-            className='lg:col-span-2'
-            height={350}
-            loading={loading}
-          />
-        )}
+        {/* Overtime Chart + Today Activities */}
+        <div className='lg:col-span-2 grid grid-cols-1 lg:grid-cols-3 gap-8'>
+          {data?.growth_overtime && (
+            <AnalyticsChart
+              type='line'
+              title='Crescimento ao Longo do Tempo'
+              subtitle='Comparativo de novos pacientes e consultas realizadas'
+              data={data.growth_overtime}
+              className='lg:col-span-2'
+              height={310}
+              loading={loading}
+            />
+          )}
+
+          {/* Today's Activities */}
+          <SectionCard
+            title='Atividades de Hoje'
+            subtitle='Eventos agendados para o dia de hoje'
+          >
+            <div className='h-[260px] overflow-y-auto mt-2'>
+              {todayEvents.length === 0 ? (
+                <div className='flex flex-col items-center justify-center h-full text-center py-4'>
+                  <CalendarCheck size={32} className='text-slate-300 dark:text-slate-600 mb-2' />
+                  <p className='text-sm text-slate-500 dark:text-slate-400'>
+                    Nenhuma atividade para hoje.
+                  </p>
+                </div>
+              ) : (
+                <div className='flex flex-col gap-2'>
+                  {todayEvents.map((event) => {
+                    const typeInfo = EVENT_TYPE_MAP[event.type];
+                    return (
+                      <div
+                        key={event.id}
+                        className={cn(
+                          'flex items-start gap-3 rounded-lg border p-3 text-sm',
+                          typeInfo.bg,
+                        )}
+                      >
+                        <span className={cn('mt-1 h-2 w-2 shrink-0 rounded-full', typeInfo.dot)} />
+                        <div className='min-w-0 flex-1'>
+                          <div className='flex items-center justify-between gap-2'>
+                            <span className={cn('font-medium truncate', typeInfo.color)}>
+                              {event.title}
+                            </span>
+                            <span className='shrink-0 text-xs text-slate-500 dark:text-slate-400'>
+                              {event.startTime}{event.endTime ? ` – ${event.endTime}` : ''}
+                            </span>
+                          </div>
+                          {event.patientName && (
+                            <p className='mt-0.5 truncate text-xs text-slate-500 dark:text-slate-400'>
+                              {event.patientName}
+                            </p>
+                          )}
+                          {event.description && (
+                            <p className='mt-0.5 truncate text-xs text-slate-400 dark:text-slate-500'>
+                              {event.description}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </SectionCard>
+        </div>
 
         {/* Species Distribution */}
         {data?.patients_by_specie && (
@@ -139,9 +217,11 @@ export default function Dashboard() {
         <SectionCard
           title='Exames recentes'
           subtitle='Últimos resultados enviados.'
+          className='flex flex-col h-[440px]'
         >
           <DataTable
             headers={['Data', 'Paciente', 'Título', 'Status', 'Ações']}
+            className='h-full'
           >
             {studies.length === 0 ? (
               <tr>
@@ -167,7 +247,7 @@ export default function Dashboard() {
                     className='hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors'
                   >
                     <td className='p-4 text-slate-600 dark:text-slate-300 text-sm'>
-                      {new Date(study.created_at).toLocaleDateString('pt-BR')}
+                      {fmtDate(study.created_at)}
                     </td>
                     <td className='p-4'>
                       <span className='font-medium text-slate-900 dark:text-white text-sm'>
@@ -181,9 +261,14 @@ export default function Dashboard() {
                       <Badge color={statusInfo.color}>{statusInfo.label}</Badge>
                     </td>
                     <td className='p-4 text-right'>
-                      <button className='text-teal-600 hover:underline text-sm font-medium'>
+                      <Button
+                        variant="link"
+                        size="sm"
+                        onClick={() => router.push(`/exams/detail?id=${study.id}`)}
+                        className='text-teal-600 h-auto p-0'
+                      >
                         Abrir
-                      </button>
+                      </Button>
                     </td>
                   </tr>
                 );
@@ -196,48 +281,51 @@ export default function Dashboard() {
         <SectionCard
           title='Últimos Pacientes'
           subtitle='Pacientes adicionados recentemente'
+          className='flex flex-col h-[440px]'
         >
-          <div className='flex flex-col gap-3 mt-4'>
-            {patients.length === 0 ? (
-              <div className='text-center py-8'>
-                <PawPrint
-                  size={32}
-                  className='text-slate-300 dark:text-slate-600 mx-auto mb-2'
-                />
-                <p className='text-sm text-slate-500 dark:text-slate-400'>
+          <div className='flex-1 overflow-y-auto min-h-0'>
+            <div className='flex flex-col gap-3 mt-4'>
+              {patients.length === 0 ? (
+                <div className='text-center py-8'>
+                  <PawPrint
+                    size={32}
+                    className='text-slate-300 dark:text-slate-600 mx-auto mb-2'
+                  />
+                  <p className='text-sm text-slate-500 dark:text-slate-400'>
                   Nenhum paciente ainda.
-                </p>
-              </div>
-            ) : (
-              patients.map((patient) => (
-                <Card
-                  key={patient.id}
-                  className='p-4 shadow-sm border-slate-100 dark:border-white/5'
-                >
-                  <div className='flex items-center justify-between'>
-                    <div className='flex items-center gap-3'>
-                      <div className='w-10 h-10 rounded-full bg-teal-100 dark:bg-teal-900/40 flex items-center justify-center'>
-                        <PawPrint
-                          size={18}
-                          className='text-teal-600 dark:text-teal-400'
-                        />
+                  </p>
+                </div>
+              ) : (
+                patients.map((patient) => (
+                  <Card
+                    key={patient.id}
+                    className='p-4 shadow-sm border-slate-100 dark:border-white/5'
+                  >
+                    <div className='flex items-center justify-between'>
+                      <div className='flex items-center gap-3'>
+                        <div className='w-10 h-10 rounded-full bg-teal-100 dark:bg-teal-900/40 flex items-center justify-center'>
+                          <PawPrint
+                            size={18}
+                            className='text-teal-600 dark:text-teal-400'
+                          />
+                        </div>
+                        <div>
+                          <h3 className='font-semibold text-gray-900 dark:text-white text-sm'>
+                            {patient.name}
+                          </h3>
+                          <p className='text-xs text-slate-500 dark:text-slate-400'>
+                            {SPECIE_LABELS[patient.specie as keyof typeof SPECIE_LABELS] ?? patient.specie}
+                          </p>
+                        </div>
                       </div>
-                      <div>
-                        <h3 className='font-semibold text-gray-900 dark:text-white text-sm'>
-                          {patient.name}
-                        </h3>
-                        <p className='text-xs text-slate-500 dark:text-slate-400'>
-                          {patient.specie}
-                        </p>
-                      </div>
+                      <span className='text-xs text-gray-500 dark:text-slate-400'>
+                        {fmtDate(patient.created_at)}
+                      </span>
                     </div>
-                    <span className='text-xs text-gray-500 dark:text-slate-400'>
-                      {new Date(patient.created_at).toLocaleDateString('pt-BR')}
-                    </span>
-                  </div>
-                </Card>
-              ))
-            )}
+                  </Card>
+                ))
+              )}
+            </div>
           </div>
         </SectionCard>
       </div>

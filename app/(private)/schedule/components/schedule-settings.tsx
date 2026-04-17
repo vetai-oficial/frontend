@@ -3,6 +3,8 @@
 import { ChevronDown, Settings2 } from 'lucide-react';
 import { useState } from 'react';
 
+import { SelectInput } from '@/app/components/select-input';
+
 export interface ScheduleSettingsState {
   weekStartHour: number;
   weekEndHour: number;
@@ -34,8 +36,6 @@ interface ScheduleSettingsProps {
   onChange: (s: ScheduleSettingsState) => void;
 }
 
-const hourOptions = Array.from({ length: 25 }, (_, i) => i); // 0–24
-
 export function ScheduleSettings({ settings, onChange }: ScheduleSettingsProps) {
   const [open, setOpen] = useState(false);
 
@@ -48,8 +48,10 @@ export function ScheduleSettings({ settings, onChange }: ScheduleSettingsProps) 
     saveScheduleSettings(next);
   }
 
-  const selectCls =
-    'rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 px-2 py-1 text-xs text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-500';
+  const hourOptions = Array.from({ length: 25 }, (_, i) => ({
+    value: String(i),
+    label: String(i).padStart(2, '0') + ':00',
+  }));
 
   return (
     <div className="border-t border-slate-100 dark:border-slate-700 pt-3 mt-4">
@@ -78,28 +80,22 @@ export function ScheduleSettings({ settings, onChange }: ScheduleSettingsProps) 
             <div className="flex items-center gap-2">
               <div className="flex flex-col gap-0.5 flex-1">
                 <label className="text-[10px] text-slate-400 dark:text-slate-500">Início</label>
-                <select
-                  className={selectCls}
-                  value={settings.weekStartHour}
-                  onChange={(e) => update('weekStartHour', Number(e.target.value))}
-                >
-                  {hourOptions.slice(0, 24).map((h) => (
-                    <option key={h} value={h}>{String(h).padStart(2, '0')}:00</option>
-                  ))}
-                </select>
+                <SelectInput
+                  compact
+                  value={String(settings.weekStartHour)}
+                  onChange={(v) => update('weekStartHour', Number(v))}
+                  options={hourOptions.slice(0, 24)}
+                />
               </div>
-              <span className="text-xs text-slate-400 mt-3">–</span>
+              <span className="text-xs text-slate-400 mt-3"> – </span>
               <div className="flex flex-col gap-0.5 flex-1">
                 <label className="text-[10px] text-slate-400 dark:text-slate-500">Fim</label>
-                <select
-                  className={selectCls}
-                  value={settings.weekEndHour}
-                  onChange={(e) => update('weekEndHour', Number(e.target.value))}
-                >
-                  {hourOptions.slice(1).map((h) => (
-                    <option key={h} value={h}>{String(h).padStart(2, '0')}:00</option>
-                  ))}
-                </select>
+                <SelectInput
+                  compact
+                  value={String(settings.weekEndHour)}
+                  onChange={(v) => update('weekEndHour', Number(v))}
+                  options={hourOptions.slice(1)}
+                />
               </div>
             </div>
             <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-1.5">

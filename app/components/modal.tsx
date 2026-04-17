@@ -3,6 +3,7 @@
 import { X } from 'lucide-react';
 import type { ReactNode } from 'react';
 
+import { Button } from '@/components/ui/button';
 import { cn } from '@/infra/utils';
 
 export interface ModalProps {
@@ -49,12 +50,14 @@ export function Modal({
               <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">{description}</p>
             )}
           </div>
-          <button
+          <Button
+            variant="ghost"
+            size="icon-sm"
             onClick={onClose}
-            className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors ml-4 shrink-0"
+            className="ml-4 shrink-0 text-slate-500"
           >
-            <X size={18} className="text-slate-500" />
-          </button>
+            <X size={18} />
+          </Button>
         </div>
 
         <div className="overflow-y-auto flex-1 p-5">{children}</div>

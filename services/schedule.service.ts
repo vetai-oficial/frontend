@@ -36,9 +36,9 @@ export const scheduleService = {
     const events = loadEvents();
     const idx = events.findIndex((e) => e.id === id);
     if (idx === -1) throw new Error('Evento não encontrado');
-    events[idx] = { ...events[idx], ...data };
+    events[idx] = { ...events[idx]!, ...data };
     saveEvents(events);
-    return events[idx];
+    return events[idx]!;
   },
 
   delete(id: string): void {

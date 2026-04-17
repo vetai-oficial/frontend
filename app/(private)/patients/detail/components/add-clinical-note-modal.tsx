@@ -40,12 +40,12 @@ export function AddClinicalNoteModal({ patientId, onClose, onSuccess }: AddClini
     <Modal title="Novo Registro Clínico" onClose={onClose} maxWidth="md">
       <form onSubmit={(e) => { void handleSubmit(e); }} className="space-y-4">
         <div>
-          <Label htmlFor="cn-title">Título</Label>
+          <Label htmlFor="cn-title">Título <span className="text-red-500">*</span></Label>
           <Input id="cn-title" placeholder="Ex: Consulta de rotina" value={title} onChange={(e) => setTitle(e.target.value)} required className="mt-1.5" />
         </div>
         <DateInput label="Data" value={date} onChange={setDate} required />
         <div>
-          <Label htmlFor="cn-desc">Descrição</Label>
+          <Label htmlFor="cn-desc">Descrição <span className="text-red-500">*</span></Label>
           <textarea
             id="cn-desc"
             placeholder="Descreva o registro clínico..."

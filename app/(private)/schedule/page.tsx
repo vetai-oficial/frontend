@@ -20,7 +20,7 @@ import type { ScheduleEvent } from '@/types/schedule';
 type ViewMode = 'month' | 'week';
 
 function getWeekStart(dateStr: string): Date {
-  const [y, m, d] = dateStr.split('-').map(Number);
+  const [y = 0, m = 0, d = 0] = dateStr.split('-').map(Number);
   const date = new Date(y, m - 1, d);
   const dayOfWeek = date.getDay(); // 0 = Sunday
   const sunday = new Date(date);
@@ -39,7 +39,7 @@ function formatWeekRange(weekStart: Date): string {
   const year = weekEnd.getFullYear();
 
   if (weekStart.getMonth() === weekEnd.getMonth()) {
-    return `${startDay}–${endDay} de ${startMonth} ${year}`;
+    return `${startDay} – ${endDay} de ${startMonth} ${year}`;
   }
   return `${startDay} ${startMonth} – ${endDay} ${endMonth} ${year}`;
 }
@@ -229,6 +229,8 @@ export default function SchedulePage() {
           initialDate={addInitialDate}
           onClose={() => setShowAddModal(false)}
           onSave={handleEventSaved}
+          minHour={scheduleSettings.weekStartHour}
+          maxHour={scheduleSettings.weekEndHour}
         />
       )}
 
@@ -237,6 +239,8 @@ export default function SchedulePage() {
           event={editingEvent}
           onClose={() => setEditingEvent(null)}
           onSave={handleEventSaved}
+          minHour={scheduleSettings.weekStartHour}
+          maxHour={scheduleSettings.weekEndHour}
         />
       )}
 

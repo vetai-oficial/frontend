@@ -3,6 +3,7 @@
 import { AlertTriangle, CheckCircle2, Lightbulb, ShieldCheck, X } from 'lucide-react';
 import { useEffect } from 'react';
 
+import { Button } from '@/components/ui/button';
 import type { StudyPrevention } from '@/types/study';
 
 interface PreventionModalProps {
@@ -47,12 +48,14 @@ export function PreventionModal({
               )}
             </div>
           </div>
-          <button
+          <Button
+            variant="ghost"
+            size="icon-sm"
             onClick={onClose}
-            className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors shrink-0"
+            className="shrink-0 text-slate-500"
           >
-            <X size={18} className="text-slate-500" />
-          </button>
+            <X size={18} />
+          </Button>
         </div>
 
         <div className="p-5 space-y-6">

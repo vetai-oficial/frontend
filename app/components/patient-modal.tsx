@@ -4,8 +4,11 @@ import { Loader2, Search, X } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { DateInput } from './date-input';
+import { InputWithLabel } from './input-with-label';
+import { SelectInput } from './select-input';
 
 import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
 import { SPECIE_LABELS } from '@/constants';
 import { patientsService } from '@/services/patients.service';
 import { tutorsService } from '@/services/tutors.service';
@@ -154,70 +157,51 @@ export function PatientModal({ patient, onClose, onSuccess }: PatientModalProps)
               {isEdit ? 'Atualize os dados do paciente' : 'Cadastre um novo pet'}
             </p>
           </div>
-          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
-            <X size={18} className="text-slate-500" />
-          </button>
+          <Button variant="ghost" size="icon-sm" onClick={onClose} className="text-slate-500">
+            <X size={18} />
+          </Button>
         </div>
 
         <div className="p-5 space-y-4">
-          <div>
-            <label className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
-              Nome <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Ex: Rex"
-              className={`w-full px-3 py-2.5 text-sm border rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500 ${errors.name ? 'border-red-400 dark:border-red-500' : 'border-slate-200 dark:border-slate-600'}`}
-            />
-            {errors.name && <p className="text-xs text-red-500 mt-1">{errors.name}</p>}
-          </div>
+          <InputWithLabel
+            label="Nome"
+            required
+            type="text"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="Ex: Rex"
+            error={errors.name}
+          />
 
-          <div>
-            <label className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
-              Espécie <span className="text-red-500">*</span>
-            </label>
-            <select
-              value={specie}
-              onChange={(e) => setSpecie(e.target.value)}
-              className={`w-full px-3 py-2.5 text-sm border rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500 ${errors.specie ? 'border-red-400 dark:border-red-500' : 'border-slate-200 dark:border-slate-600'}`}
-            >
-              <option value="">Selecione a espécie</option>
-              {SPECIES.map(([value, label]) => (
-                <option key={value} value={value}>{label}</option>
-              ))}
-            </select>
-            {errors.specie && <p className="text-xs text-red-500 mt-1">{errors.specie}</p>}
-          </div>
+          <SelectInput
+            label="Espécie"
+            required
+            value={specie}
+            onChange={setSpecie}
+            placeholder="Selecione a espécie"
+            error={errors.specie}
+            options={[{ value: '', label: 'Selecione a espécie' }, ...SPECIES.map(([v, l]) => ({ value: v, label: l }))]}
+          />
 
           <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
-                Raça
-              </label>
-              <input
-                type="text"
-                value={breed}
-                onChange={(e) => setBreed(e.target.value)}
-                placeholder="Ex: Labrador"
-                className="w-full px-3 py-2.5 text-sm border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
-              />
-            </div>
-            <div>
-              <label className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
-                Sexo
-              </label>
-              <select
-                value={sex}
-                onChange={(e) => setSex(e.target.value)}
-                className="w-full px-3 py-2.5 text-sm border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
-              >
-                <option value="">Não informado</option>
-                <option value="MALE">Macho</option>
-                <option value="FEMALE">Fêmea</option>
-              </select>
-            </div>
+            <InputWithLabel
+              label="Raça"
+              type="text"
+              value={breed}
+              onChange={(e) => setBreed(e.target.value)}
+              placeholder="Ex: Labrador"
+            />
+            <SelectInput
+              label="Sexo"
+              value={sex}
+              onChange={setSex}
+              placeholder="Não informado"
+              options={[
+                { value: '', label: 'Não informado' },
+                { value: 'MALE', label: 'Macho' },
+                { value: 'FEMALE', label: 'Fêmea' },
+              ]}
+            />
           </div>
 
           <DateInput
@@ -232,18 +216,13 @@ export function PatientModal({ patient, onClose, onSuccess }: PatientModalProps)
               value={castrationDate}
               onChange={setCastrationDate}
             />
-            <div>
-              <label className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
-                Microchip
-              </label>
-              <input
-                type="text"
-                value={microchip}
-                onChange={(e) => setMicrochip(e.target.value)}
-                placeholder="Ex: 900123456789012"
-                className="w-full px-3 py-2.5 text-sm border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
-              />
-            </div>
+            <InputWithLabel
+              label="Microchip"
+              type="text"
+              value={microchip}
+              onChange={(e) => setMicrochip(e.target.value)}
+              placeholder="Ex: 900123456789012"
+            />
           </div>
 
           <DateInput
@@ -253,9 +232,9 @@ export function PatientModal({ patient, onClose, onSuccess }: PatientModalProps)
           />
 
           <div>
-            <label className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">
-              Tutor {!isEdit && <span className="text-red-500">*</span>}
-            </label>
+            <Label required={!isEdit} className="mb-1.5 block">
+              Tutor
+            </Label>
             {selectedTutor ? (
               <div className="flex items-center justify-between p-3 bg-teal-50 dark:bg-teal-900/20 border border-teal-200 dark:border-teal-700 rounded-lg">
                 <div>
@@ -264,9 +243,9 @@ export function PatientModal({ patient, onClose, onSuccess }: PatientModalProps)
                     <p className="text-xs text-slate-500 dark:text-slate-400">{selectedTutor.email}</p>
                   )}
                 </div>
-                <button type="button" onClick={() => setSelectedTutor(null)} className="text-teal-600 hover:text-teal-800 dark:text-teal-400">
+                <Button type="button" variant="ghost" size="icon-sm" onClick={() => setSelectedTutor(null)} className="text-teal-600 hover:text-teal-800 dark:text-teal-400">
                   <X size={14} />
-                </button>
+                </Button>
               </div>
             ) : (
               <div ref={dropdownRef} className="relative">
@@ -291,15 +270,18 @@ export function PatientModal({ patient, onClose, onSuccess }: PatientModalProps)
                       <p className="p-3 text-sm text-slate-500 dark:text-slate-400 text-center">Nenhum tutor encontrado</p>
                     ) : (
                       tutors.map((tutor) => (
-                        <button
+                        <Button
                           key={tutor.id}
                           type="button"
+                          variant="ghost"
                           onClick={() => { setSelectedTutor(tutor); setShowTutorDropdown(false); setTutorSearch(''); }}
-                          className="w-full text-left px-3 py-2.5 text-sm hover:bg-slate-50 dark:hover:bg-slate-600 transition-colors border-b border-slate-100 dark:border-slate-600 last:border-0"
+                          className="w-full justify-start px-3 py-2.5 h-auto rounded-none border-b border-slate-100 dark:border-slate-600 last:border-0"
                         >
-                          <p className="font-medium text-slate-900 dark:text-white">{tutor.name}</p>
-                          {tutor.email && <p className="text-xs text-slate-500 dark:text-slate-400">{tutor.email}</p>}
-                        </button>
+                          <div className="text-left">
+                            <p className="font-medium text-slate-900 dark:text-white">{tutor.name}</p>
+                            {tutor.email && <p className="text-xs text-slate-500 dark:text-slate-400">{tutor.email}</p>}
+                          </div>
+                        </Button>
                       ))
                     )}
                   </div>
