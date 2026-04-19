@@ -18,7 +18,7 @@ export function SectionCard({ title, subtitle, children, className = '', headerA
         </div>
         {headerAction && <div className="w-full sm:w-auto">{headerAction}</div>}
       </div>
-      <div className="flex flex-col flex-1 min-h-0">{children}</div>
+      <div className="flex flex-col flex-1 min-h-0 overflow-hidden">{children}</div>
     </div>
   );
 }

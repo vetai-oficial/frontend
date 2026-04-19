@@ -165,7 +165,9 @@ export function ExamDetailContent() {
       </div>
 
       {study.results.length > 0 ? (
-        study.results.map((result, i) => {
+        study.results
+        .filter((result) => !/^(comentários|observações|obs\.?|notas|laudo)$/i.test(result.title.trim()))
+        .map((result, i) => {
           const { prevention } = study;
           const hasSubgroups = result.values.some((v) => v.subgroup);
           const subgroups = hasSubgroups

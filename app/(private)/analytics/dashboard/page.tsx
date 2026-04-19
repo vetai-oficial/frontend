@@ -218,11 +218,10 @@ export default function Dashboard() {
         <SectionCard
           title='Exames recentes'
           subtitle='Últimos resultados enviados.'
-          className='flex flex-col h-[440px]'
         >
           <DataTable
             headers={['Data', 'Paciente', 'Título', 'Status', 'Ações']}
-            className='h-full'
+            maxBodyHeight={340}
           >
             {loading ? (
               Array.from({ length: 5 }).map((_, i) => (

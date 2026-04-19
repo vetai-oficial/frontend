@@ -36,6 +36,7 @@ export interface AlteredValueInfo {
 }
 
 export interface StudyPrevention {
+  generalDiagnosis?: string;
   alteredValues: AlteredValueInfo[];
   generalRecommendations: string[];
 }
