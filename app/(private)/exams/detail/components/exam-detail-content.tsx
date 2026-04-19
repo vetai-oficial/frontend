@@ -127,26 +127,28 @@ export function ExamDetailContent() {
 
   return (
     <>
-      <div className="flex items-center gap-4 mb-6">
-        <Link href="/exams">
-          <Button variant="ghost" size="icon">
-            <ArrowLeft size={20} />
-          </Button>
-        </Link>
-        <div className="flex-1">
-          <h2 className="text-xl font-bold text-slate-900 dark:text-white">
-            {study.title ?? 'Exame'}
-          </h2>
-          <p className="text-sm text-slate-500 dark:text-slate-400">
-            Paciente: {study.patient?.name ?? '-'}
-          </p>
+      <div className="flex flex-col gap-3 mb-6 sm:flex-row sm:items-center sm:gap-4">
+        <div className="flex items-center gap-3 min-w-0">
+          <Link href="/exams">
+            <Button variant="ghost" size="icon" className="shrink-0">
+              <ArrowLeft size={20} />
+            </Button>
+          </Link>
+          <div className="min-w-0">
+            <h2 className="text-xl font-bold text-slate-900 dark:text-white truncate">
+              {study.title ?? 'Exame'}
+            </h2>
+            <p className="text-sm text-slate-500 dark:text-slate-400 truncate">
+              Paciente: {study.patient?.name ?? '-'}
+            </p>
+          </div>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 flex-wrap sm:ml-auto sm:flex-nowrap">
           <Button
             variant="outline"
             onClick={() => { void openPdf(); }}
             disabled={loadingPdf}
-            className="gap-2"
+            className="gap-2 text-sm"
           >
             {loadingPdf ? <Loader2 size={16} className="animate-spin" /> : <FileText size={16} />}
             Visualizar exame
@@ -154,7 +156,7 @@ export function ExamDetailContent() {
           {study.status === 'COMPLETED' && hasAlteredValues && (
             <Button
               onClick={() => router.push(`/exams/prevention?id=${study.id}`)}
-              className="bg-teal-600 dark:bg-teal-700 text-white hover:bg-teal-700 dark:hover:bg-teal-800 gap-2"
+              className="bg-teal-600 dark:bg-teal-700 text-white hover:bg-teal-700 dark:hover:bg-teal-800 gap-2 text-sm"
             >
               <ShieldCheck size={16} />
               Prevenção
