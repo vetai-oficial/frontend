@@ -8,6 +8,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
+import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/infra/utils';
 
 interface MetricCardProps {
@@ -30,6 +31,10 @@ export function MetricCard({
   className,
 }: MetricCardProps) {
   const IconComponent = LucideIcons[icon] as React.ElementType;
+
+  if (loading) {
+    return <Skeleton className={cn('rounded-2xl h-[116px]', className)} />;
+  }
 
   return (
     <div
@@ -58,24 +63,17 @@ export function MetricCard({
           </div>
 
           <div className='flex items-baseline gap-1'>
-            {loading ? (
-              <div className='h-9 w-24 animate-pulse rounded-md bg-muted' />
-            ) : (
-              <h3 className='text-3xl font-bold tracking-tight text-foreground'>
-                {value}
-              </h3>
-            )}
+            <h3 className='text-3xl font-bold tracking-tight text-foreground'>
+              {value}
+            </h3>
           </div>
         </div>
 
         <div
-          className={cn(
-            'flex h-12 w-12 items-center justify-center rounded-xl transition-all duration-300 border',
-            loading ? 'bg-muted' : '',
-          )}
+          className='flex h-12 w-12 items-center justify-center rounded-xl transition-all duration-300 border'
           style={{
-            backgroundColor: !loading ? `${color}25` : undefined,
-            borderColor: !loading ? `${color}40` : 'transparent',
+            backgroundColor: `${color}25`,
+            borderColor: `${color}40`,
             color,
           }}
         >

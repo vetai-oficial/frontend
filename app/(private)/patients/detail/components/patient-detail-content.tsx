@@ -46,6 +46,7 @@ import { PatientModal } from '@/app/components/patient-modal';
 import { SectionCard } from '@/app/components/section-card';
 import { UploadExamModal } from '@/app/components/upload-exam-modal';
 import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
 import { SPECIE_LABELS } from '@/constants';
 import { documentsService } from '@/services/documents.service';
 import { healthRecordsService } from '@/services/health-records.service';
@@ -277,8 +278,52 @@ export function PatientDetailContent() {
   };
 
   if (loading) return (
-    <div className="flex items-center justify-center py-20">
-      <Loader2 size={32} className="animate-spin text-teal-600" />
+    <div className="flex flex-col gap-6">
+      {/* Header skeleton */}
+      <div className="flex items-center gap-4 mb-2">
+        <Skeleton className="w-9 h-9 rounded-lg" />
+        <div className="flex flex-col gap-2 flex-1">
+          <Skeleton className="h-5 w-48" />
+          <Skeleton className="h-3.5 w-32" />
+        </div>
+        <Skeleton className="w-9 h-9 rounded-lg" />
+        <Skeleton className="w-9 h-9 rounded-lg" />
+      </div>
+      {/* Info cards skeleton */}
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-3">
+        {Array.from({ length: 7 }).map((_, i) => (
+          <div key={i} className="flex flex-col gap-2 p-3 rounded-xl border border-slate-200 dark:border-slate-700">
+            <Skeleton className="w-7 h-7 rounded-lg" />
+            <Skeleton className="h-3 w-16" />
+            <Skeleton className="h-4 w-24" />
+            <Skeleton className="h-3 w-20" />
+          </div>
+        ))}
+      </div>
+      {/* Sections skeleton */}
+      {Array.from({ length: 4 }).map((_, i) => (
+        <div key={i} className="rounded-xl border border-slate-200 dark:border-slate-700 p-5 flex flex-col gap-3">
+          <div className="flex items-center justify-between">
+            <div className="flex flex-col gap-1.5">
+              <Skeleton className="h-4 w-32" />
+              <Skeleton className="h-3 w-48" />
+            </div>
+            <Skeleton className="h-9 w-36 rounded-lg" />
+          </div>
+          <div className="flex flex-col gap-2 mt-2">
+            {Array.from({ length: 3 }).map((_, j) => (
+              <div key={j} className="flex items-center gap-3 py-2">
+                <Skeleton className="w-8 h-8 rounded-lg shrink-0" />
+                <div className="flex flex-col gap-1.5 flex-1">
+                  <Skeleton className="h-3.5 w-40" />
+                  <Skeleton className="h-3 w-24" />
+                </div>
+                <Skeleton className="h-5 w-16 rounded-full" />
+              </div>
+            ))}
+          </div>
+        </div>
+      ))}
     </div>
   );
 
@@ -416,8 +461,20 @@ export function PatientDetailContent() {
           </Button>
         }
       >
-        {examsLoading ? <div className="py-8 flex justify-center"><Loader2 size={24} className="animate-spin text-teal-600" /></div>
-          : exams.length === 0 ? (
+        {examsLoading ? (
+          <div className="flex flex-col gap-2 py-2">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <div key={i} className="flex items-center gap-3 py-2">
+                <Skeleton className="w-8 h-8 rounded-lg shrink-0" />
+                <div className="flex flex-col gap-1.5 flex-1">
+                  <Skeleton className="h-3.5 w-40" />
+                  <Skeleton className="h-3 w-24" />
+                </div>
+                <Skeleton className="h-5 w-16 rounded-full" />
+              </div>
+            ))}
+          </div>
+        ) : exams.length === 0 ? (
             <div className="py-8 text-center">
               <Microscope size={32} className="text-slate-300 dark:text-slate-600 mx-auto mb-2" />
               <p className="text-sm text-slate-500 dark:text-slate-400">Nenhum exame encontrado.</p>
@@ -460,8 +517,20 @@ export function PatientDetailContent() {
             </Button>
           }
         >
-          {weightsLoading ? <div className="py-8 flex justify-center"><Loader2 size={24} className="animate-spin text-teal-600" /></div>
-            : weightRecords.length === 0 ? (
+          {weightsLoading ? (
+            <div className="flex flex-col gap-2 py-2">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <div key={i} className="flex items-center gap-3 py-2">
+                  <Skeleton className="w-8 h-8 rounded-lg shrink-0" />
+                  <div className="flex flex-col gap-1.5 flex-1">
+                    <Skeleton className="h-4 w-16" />
+                    <Skeleton className="h-3 w-20" />
+                  </div>
+                  <Skeleton className="w-7 h-7 rounded-lg" />
+                </div>
+              ))}
+            </div>
+          ) : weightRecords.length === 0 ? (
               <div className="py-8 text-center">
                 <Scale size={32} className="text-slate-300 dark:text-slate-600 mx-auto mb-2" />
                 <p className="text-sm text-slate-500 dark:text-slate-400">Nenhum registro de peso.</p>
@@ -497,8 +566,20 @@ export function PatientDetailContent() {
             </Button>
           }
         >
-          {clinicalLoading ? <div className="py-8 flex justify-center"><Loader2 size={24} className="animate-spin text-teal-600" /></div>
-            : clinicalNotes.length === 0 ? (
+          {clinicalLoading ? (
+            <div className="flex flex-col gap-3 py-2">
+              {Array.from({ length: 2 }).map((_, i) => (
+                <div key={i} className="p-4 rounded-xl border border-slate-200 dark:border-slate-700 flex flex-col gap-2">
+                  <div className="flex items-center gap-2">
+                    <Skeleton className="h-4 w-36" />
+                    <Skeleton className="h-3 w-20 ml-auto" />
+                  </div>
+                  <Skeleton className="h-3 w-full" />
+                  <Skeleton className="h-3 w-4/5" />
+                </div>
+              ))}
+            </div>
+          ) : clinicalNotes.length === 0 ? (
               <div className="py-8 text-center">
                 <FileText size={32} className="text-slate-300 dark:text-slate-600 mx-auto mb-2" />
                 <p className="text-sm text-slate-500 dark:text-slate-400">Nenhum registro clínico.</p>
@@ -535,8 +616,21 @@ export function PatientDetailContent() {
             </Button>
           }
         >
-          {vaccinesLoading ? <div className="py-8 flex justify-center"><Loader2 size={24} className="animate-spin text-teal-600" /></div>
-            : vaccines.length === 0 ? (
+          {vaccinesLoading ? (
+            <div className="flex flex-col gap-2 py-2">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <div key={i} className="flex items-center gap-3 py-2 border-b border-slate-100 dark:border-slate-700/50 last:border-0">
+                  <Skeleton className="w-8 h-8 rounded-lg shrink-0" />
+                  <div className="flex flex-col gap-1.5 flex-1">
+                    <Skeleton className="h-3.5 w-36" />
+                    <Skeleton className="h-3 w-20" />
+                  </div>
+                  <Skeleton className="h-5 w-12 rounded-full" />
+                  <Skeleton className="h-3 w-20" />
+                </div>
+              ))}
+            </div>
+          ) : vaccines.length === 0 ? (
               <div className="py-8 text-center">
                 <Syringe size={32} className="text-slate-300 dark:text-slate-600 mx-auto mb-2" />
                 <p className="text-sm text-slate-500 dark:text-slate-400">Nenhuma vacina registrada.</p>
@@ -594,8 +688,22 @@ export function PatientDetailContent() {
             </Button>
           }
         >
-          {prescriptionsLoading ? <div className="py-8 flex justify-center"><Loader2 size={24} className="animate-spin text-teal-600" /></div>
-            : prescriptions.length === 0 ? (
+          {prescriptionsLoading ? (
+            <div className="flex flex-col gap-3 py-2">
+              {Array.from({ length: 2 }).map((_, i) => (
+                <div key={i} className="p-4 rounded-xl border border-slate-200 dark:border-slate-700 flex flex-col gap-2">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Skeleton className="h-4 w-20" />
+                    <Skeleton className="h-3 w-24 ml-auto" />
+                  </div>
+                  <div className="pl-3 border-l-2 border-slate-200 dark:border-slate-700 flex flex-col gap-1.5">
+                    <Skeleton className="h-3.5 w-40" />
+                    <Skeleton className="h-3 w-56" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : prescriptions.length === 0 ? (
               <div className="py-8 text-center">
                 <ClipboardList size={32} className="text-slate-300 dark:text-slate-600 mx-auto mb-2" />
                 <p className="text-sm text-slate-500 dark:text-slate-400">Nenhuma receita registrada.</p>
@@ -649,8 +757,20 @@ export function PatientDetailContent() {
             </Button>
           }
         >
-          {notesLoading ? <div className="py-8 flex justify-center"><Loader2 size={24} className="animate-spin text-teal-600" /></div>
-            : notes.length === 0 ? (
+          {notesLoading ? (
+            <div className="flex flex-col gap-3 py-2">
+              {Array.from({ length: 2 }).map((_, i) => (
+                <div key={i} className="p-4 rounded-xl border border-yellow-200 dark:border-yellow-800/40 bg-yellow-50/50 dark:bg-yellow-900/10 flex gap-3">
+                  <Skeleton className="w-5 h-5 rounded shrink-0 mt-0.5" />
+                  <div className="flex flex-col gap-1.5 flex-1">
+                    <Skeleton className="h-3.5 w-full" />
+                    <Skeleton className="h-3.5 w-4/5" />
+                    <Skeleton className="h-3 w-24 mt-1" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : notes.length === 0 ? (
               <div className="py-8 text-center">
                 <StickyNote size={32} className="text-slate-300 dark:text-slate-600 mx-auto mb-2" />
                 <p className="text-sm text-slate-500 dark:text-slate-400">Nenhuma nota registrada.</p>
@@ -687,8 +807,21 @@ export function PatientDetailContent() {
             </>
           }
         >
-          {docsLoading ? <div className="py-8 flex justify-center"><Loader2 size={24} className="animate-spin text-teal-600" /></div>
-            : documents.length === 0 ? (
+          {docsLoading ? (
+            <div className="flex flex-col gap-2 py-2">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <div key={i} className="flex items-center gap-3 py-2">
+                  <Skeleton className="w-8 h-8 rounded-lg shrink-0" />
+                  <div className="flex flex-col gap-1.5 flex-1">
+                    <Skeleton className="h-3.5 w-48" />
+                    <Skeleton className="h-3 w-20" />
+                  </div>
+                  <Skeleton className="w-7 h-7 rounded-lg" />
+                  <Skeleton className="w-7 h-7 rounded-lg" />
+                </div>
+              ))}
+            </div>
+          ) : documents.length === 0 ? (
               <div
                 className="py-10 border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-lg text-center cursor-pointer hover:border-teal-400 dark:hover:border-teal-600 transition-colors"
                 onClick={() => fileInputRef.current?.click()}
