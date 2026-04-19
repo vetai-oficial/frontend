@@ -61,8 +61,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const register = useCallback(
-    async (name: string, email: string, password: string) => {
-      const response = await authService.register({ name, email, password });
+    async (name: string, email: string, password: string, crmv: string) => {
+      const response = await authService.register({ name, email, password, crmv });
       setToken(response.access_token);
       localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(response.user));
       setState({ user: response.user, isLoading: false, isAuthenticated: true });

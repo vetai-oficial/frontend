@@ -257,7 +257,7 @@ export default function Dashboard() {
                     className='hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors'
                   >
                     <td className='p-4 text-slate-600 dark:text-slate-300 text-sm'>
-                      {fmtDate(study.created_at)}
+                      {fmtDate(study.examDate ?? study.created_at)}
                     </td>
                     <td className='p-4'>
                       <span className='font-medium text-slate-900 dark:text-white text-sm'>
