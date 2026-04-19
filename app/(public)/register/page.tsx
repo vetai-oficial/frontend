@@ -21,6 +21,7 @@ export default function RegisterPage() {
   const router = useRouter();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
+  const [crmv, setCrmv] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -45,7 +46,7 @@ export default function RegisterPage() {
     setLoading(true);
 
     try {
-      const response = await authService.register({ name, email, password });
+      const response = await authService.register({ name, email, password, crmv });
       setToken(response.access_token);
       localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(response.user));
       router.push('/analytics/dashboard');
@@ -101,6 +102,19 @@ export default function RegisterPage() {
                 onChange={(e) => setName(e.target.value)}
                 required
                 autoComplete='name'
+                className='h-11'
+              />
+            </div>
+
+            <div className='space-y-2'>
+              <Label htmlFor='crmv'>CRMV</Label>
+              <Input
+                id='crmv'
+                type='text'
+                placeholder='Ex: SP-12345'
+                value={crmv}
+                onChange={(e) => setCrmv(e.target.value)}
+                required
                 className='h-11'
               />
             </div>
