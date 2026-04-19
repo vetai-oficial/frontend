@@ -14,10 +14,10 @@ import {
   type ChartData,
   type ChartOptions,
 } from 'chart.js';
-import { Loader2 } from 'lucide-react';
 import { Bar, Doughnut, Line } from 'react-chartjs-2';
 
 import { SectionCard } from '@/app/components/section-card';
+import { Skeleton } from '@/components/ui/skeleton';
 
 ChartJS.register(
   CategoryScale,
@@ -89,18 +89,43 @@ export function AnalyticsChart({
         },
   };
 
-  const renderChart = () => {
-    if (loading) {
-      return (
-        <div
-          className='flex items-center justify-center w-full'
-          style={{ height }}
-        >
-          <Loader2 className='h-8 w-8 animate-spin text-teal-600' />
+  if (loading) {
+    return (
+      <SectionCard
+        title={<Skeleton className='h-5 w-40' />}
+        subtitle={<Skeleton className='h-3.5 w-56 mt-1' />}
+        {...(className ? { className } : {})}
+      >
+        <div className='w-full mt-4' style={{ height }}>
+          {type === 'doughnut' ? (
+            <div className='flex items-center justify-center h-full gap-8'>
+              <Skeleton className='w-44 h-44 rounded-full' />
+              <div className='flex flex-col gap-2'>
+                {Array.from({ length: 4 }).map((_, i) => (
+                  <div key={i} className='flex items-center gap-2'>
+                    <Skeleton className='w-3 h-3 rounded-full' />
+                    <Skeleton className='h-3 w-20' />
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <div className='flex items-end gap-2 h-full w-full pb-6'>
+              {Array.from({ length: type === 'bar' ? 6 : 8 }).map((_, i) => (
+                <Skeleton
+                  key={i}
+                  className='flex-1 rounded-t-md'
+                  style={{ height: `${30 + Math.sin(i * 1.2) * 20 + (i % 3) * 15}%` }}
+                />
+              ))}
+            </div>
+          )}
         </div>
-      );
-    }
+      </SectionCard>
+    );
+  }
 
+  const renderChart = () => {
     switch (type) {
     case 'line':
       return <Line data={data} options={commonOptions} height={height} />;

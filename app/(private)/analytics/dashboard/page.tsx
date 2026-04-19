@@ -45,8 +45,8 @@ export default function Dashboard() {
     try {
       const res = await analyticsService.getDashboard();
       setData(res);
-    } catch (error) {
-      console.error('Failed to fetch dashboard data', error);
+    } catch (_) {
+      console.error('Failed to fetch dashboard data');
     } finally {
       setLoading(false);
     }
@@ -97,12 +97,12 @@ export default function Dashboard() {
           tooltip='Número total de pacientes cadastrados na clínica.'
         />
         <MetricCard
-          title='Total de Laudos'
+          title='Total de Exames'
           value={data?.total_studies ?? 0}
           icon='ClipboardList'
           color='#FFA726'
           loading={loading}
-          tooltip='Total de exames e laudos realizados.'
+          tooltip='Total de exames realizados.'
         />
         <MetricCard
           title='Hoje'
@@ -130,7 +130,7 @@ export default function Dashboard() {
               type='line'
               title='Crescimento ao Longo do Tempo'
               subtitle='Comparativo de novos pacientes e consultas realizadas'
-              data={data?.growth_overtime ?? []}
+              data={data?.growth_overtime ?? { labels: [], datasets: [] }}
               className='lg:col-span-2'
               height={310}
               loading={loading}
@@ -198,7 +198,7 @@ export default function Dashboard() {
             type='doughnut'
             title='Distribuição por Espécie'
             subtitle='Quais animais são mais atendidos'
-            data={data?.patients_by_specie ?? []}
+            data={data?.patients_by_specie ?? { labels: [], datasets: [] }}
             loading={loading}
           />
         )}
@@ -209,7 +209,7 @@ export default function Dashboard() {
             type='bar'
             title='Status das Consultas'
             subtitle='Acompanhamento do progresso clínico'
-            data={data?.consultations_status ?? []}
+            data={data?.consultations_status ?? { labels: [], datasets: [] }}
             loading={loading}
           />
         )}

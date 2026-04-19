@@ -181,6 +181,7 @@ export function ExamDetailContent() {
                 ? prevention?.alteredValues.find((a) => a.name === val.title)
                 : undefined;
               const isClickable = !!alteredInfo;
+              const isQualitative = !isNA && isNaN(Number(val.value));
               return (
                 <Card
                   key={j}
@@ -193,36 +194,78 @@ export function ExamDetailContent() {
                         : ''
                   } ${isClickable ? 'cursor-pointer hover:shadow-md' : ''}`}
                 >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0 flex-1">
-                      <p className={`font-medium text-sm truncate ${isAltered ? 'text-red-700 dark:text-red-400' : 'text-slate-900 dark:text-white'}`}>
-                        {val.title}
-                      </p>
-                      {val.unit && (
-                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                          Unidade: {val.unit}
+                  {isQualitative ? (
+                    <div className="flex flex-col gap-2">
+                      <div className="flex items-center justify-between gap-2">
+                        <p className={`font-medium text-sm ${isAltered ? 'text-red-700 dark:text-red-400' : 'text-slate-900 dark:text-white'}`}>
+                          {val.title}
                         </p>
-                      )}
+                        {!isNA && (
+                          <Badge color={isAltered ? 'red' : 'green'}>
+                            {val.status === 'HIGHER' ? 'Alterado' : 'Normal'}
+                          </Badge>
+                        )}
+                      </div>
+                      <p className={`text-sm ${isAltered ? 'text-red-600 dark:text-red-400' : 'text-slate-600 dark:text-slate-300'}`}>
+                        {val.value}
+                      </p>
                       {referenceText && (
-                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                        <p className="text-xs text-slate-500 dark:text-slate-400">
                           Referência: {referenceText}
                         </p>
                       )}
                     </div>
-                    <div className="text-right shrink-0">
-                      <p className={`text-lg font-bold ${isAltered ? 'text-red-600 dark:text-red-400' : isNA ? 'text-slate-400 dark:text-slate-500' : 'text-slate-900 dark:text-white'}`}>
-                        {val.value}
-                      </p>
-                      {!isNA && (
-                        <Badge color={isAltered ? 'red' : 'green'}>
-                          {val.status === 'HIGHER' ? 'Alto' : val.status === 'LOWER' ? 'Baixo' : 'Normal'}
-                        </Badge>
-                      )}
+                  ) : (
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0 flex-1">
+                        <p className={`font-medium text-sm truncate ${isAltered ? 'text-red-700 dark:text-red-400' : 'text-slate-900 dark:text-white'}`}>
+                          {val.title}
+                        </p>
+                        {val.unit && (
+                          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                            Unidade: {val.unit}
+                          </p>
+                        )}
+                        {referenceText && (
+                          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                            Referência: {referenceText}
+                          </p>
+                        )}
+                      </div>
+                      <div className="text-right shrink-0">
+                        <p className={`text-lg font-bold ${isAltered ? 'text-red-600 dark:text-red-400' : isNA ? 'text-slate-400 dark:text-slate-500' : 'text-slate-900 dark:text-white'}`}>
+                          {val.value}
+                        </p>
+                        {!isNA && (
+                          <Badge color={isAltered ? 'red' : 'green'}>
+                            {val.status === 'HIGHER' ? 'Alto' : val.status === 'LOWER' ? 'Baixo' : 'Normal'}
+                          </Badge>
+                        )}
+                      </div>
                     </div>
-                  </div>
+                  )}
                 </Card>
               );
             });
+
+          const renderMixed = (values: typeof result.values) => {
+            const qualitative = values.filter((v) => v.value !== 'N/A' && isNaN(Number(v.value)));
+            const numeric = values.filter((v) => !qualitative.includes(v));
+            return (
+              <div className="flex flex-col gap-3">
+                {numeric.length > 0 && (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {renderValues(numeric)}
+                  </div>
+                )}
+                {qualitative.length > 0 && (
+                  <div className="flex flex-col gap-3">
+                    {renderValues(qualitative)}
+                  </div>
+                )}
+              </div>
+            );
+          };
 
           return (
             <SectionCard key={i} title={result.title} subtitle="Resultados do exame" className="mb-4">
@@ -233,16 +276,12 @@ export function ExamDetailContent() {
                       <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400 mb-2 px-1">
                         {sg}
                       </p>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        {renderValues(result.values.filter((v) => v.subgroup === sg))}
-                      </div>
+                      {renderMixed(result.values.filter((v) => v.subgroup === sg))}
                     </div>
                   ))}
                 </div>
               ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {renderValues(result.values)}
-                </div>
+                renderMixed(result.values)
               )}
             </SectionCard>
           );
@@ -259,18 +298,21 @@ export function ExamDetailContent() {
       )}
 
       {pdfUrl && (
-        <div className="fixed inset-0 z-50 flex flex-col bg-black/80">
-          <div className="flex items-center justify-between px-4 py-3 bg-slate-900 shrink-0">
-            <p className="text-white font-medium text-sm">{study.title ?? 'Exame'}</p>
-            <Button variant="ghost" size="icon-sm" onClick={closePdf} className="text-slate-300 hover:text-white">
-              <X size={18} />
-            </Button>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={closePdf} />
+          <div className="relative flex flex-col bg-white dark:bg-slate-900 rounded-xl shadow-2xl w-full max-w-4xl h-[90vh]">
+            <div className="flex items-center justify-between px-5 py-3 border-b border-slate-200 dark:border-slate-700 shrink-0">
+              <p className="font-semibold text-sm text-slate-900 dark:text-white truncate">{study.title ?? 'Exame'}</p>
+              <Button variant="ghost" size="icon-sm" onClick={closePdf} className="text-slate-500 hover:text-slate-900 dark:hover:text-white shrink-0">
+                <X size={18} />
+              </Button>
+            </div>
+            <iframe
+              src={pdfUrl}
+              className="flex-1 w-full border-0 rounded-b-xl"
+              title="Visualizar exame"
+            />
           </div>
-          <iframe
-            src={pdfUrl}
-            className="flex-1 w-full border-0"
-            title="Visualizar exame"
-          />
         </div>
       )}
 

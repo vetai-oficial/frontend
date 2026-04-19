@@ -32,10 +32,6 @@ export function MetricCard({
 }: MetricCardProps) {
   const IconComponent = LucideIcons[icon] as React.ElementType;
 
-  if (loading) {
-    return <Skeleton className={cn('rounded-2xl h-[116px]', className)} />;
-  }
-
   return (
     <div
       className={cn(
@@ -47,25 +43,35 @@ export function MetricCard({
       <div className='flex items-start justify-between'>
         <div className='space-y-2'>
           <div className='flex items-center gap-2'>
-            <span className='text-sm font-medium text-muted-foreground'>
-              {title}
-            </span>
-            {tooltip && (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <LucideIcons.HelpCircle className='h-3.5 w-3.5 text-muted-foreground/40 hover:text-muted-foreground/60 transition-colors' />
-                </TooltipTrigger>
-                <TooltipContent side='top' align='center'>
-                  <p className='max-w-[200px] leading-relaxed'>{tooltip}</p>
-                </TooltipContent>
-              </Tooltip>
+            {loading ? (
+              <Skeleton className='h-4 w-28' />
+            ) : (
+              <>
+                <span className='text-sm font-medium text-muted-foreground'>
+                  {title}
+                </span>
+                {tooltip && (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <LucideIcons.HelpCircle className='h-3.5 w-3.5 text-muted-foreground/40 hover:text-muted-foreground/60 transition-colors' />
+                    </TooltipTrigger>
+                    <TooltipContent side='top' align='center'>
+                      <p className='max-w-[200px] leading-relaxed'>{tooltip}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                )}
+              </>
             )}
           </div>
 
           <div className='flex items-baseline gap-1'>
-            <h3 className='text-3xl font-bold tracking-tight text-foreground'>
-              {value}
-            </h3>
+            {loading ? (
+              <Skeleton className='h-9 w-20' />
+            ) : (
+              <h3 className='text-3xl font-bold tracking-tight text-foreground'>
+                {value}
+              </h3>
+            )}
           </div>
         </div>
 
