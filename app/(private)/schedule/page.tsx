@@ -96,7 +96,7 @@ export default function SchedulePage() {
 
   function handleSwitchView(mode: ViewMode) {
     if (mode === 'week') {
-      setWeekStart(getWeekStart(selectedDate));
+      setWeekStart(getWeekStart(todayStr));
     }
     setViewMode(mode);
   }

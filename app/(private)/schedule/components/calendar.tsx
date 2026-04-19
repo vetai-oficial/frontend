@@ -71,16 +71,28 @@ export function Calendar({ year, month, events, selectedDate, today, onSelectDat
               </span>
 
               <div className="flex flex-col gap-0.5 w-full overflow-hidden">
-                {dayEvents.slice(0, 2).map((ev) => (
-                  <button
-                    key={ev.id}
-                    onClick={(e) => { e.stopPropagation(); onEventClick(ev); }}
-                    className={`w-full truncate text-[10px] font-medium px-1 py-0.5 rounded flex items-center gap-1 border ${EVENT_TYPE_MAP[ev.type].bg} ${EVENT_TYPE_MAP[ev.type].color} hover:opacity-80 transition-opacity`}
-                  >
-                    <span className={`w-1 h-1 rounded-full shrink-0 ${EVENT_TYPE_MAP[ev.type].dot}`} />
-                    <span className="truncate">{ev.title}</span>
-                  </button>
-                ))}
+                {dayEvents.slice(0, 2).map((ev) => {
+                  const past = ev.date < today;
+                  const bgColor = past
+                    ? 'bg-slate-100 dark:bg-slate-700/40 border-slate-200 dark:border-slate-600'
+                    : `${EVENT_TYPE_MAP[ev.type].bg}`;
+                  const textColor = past
+                    ? 'text-slate-400 dark:text-slate-500'
+                    : EVENT_TYPE_MAP[ev.type].color;
+                  const dotColor = past
+                    ? 'bg-slate-300 dark:bg-slate-600'
+                    : EVENT_TYPE_MAP[ev.type].dot;
+                  return (
+                    <button
+                      key={ev.id}
+                      onClick={(e) => { e.stopPropagation(); onEventClick(ev); }}
+                      className={`w-full truncate text-[10px] font-medium px-1 py-0.5 rounded flex items-center gap-1 border ${bgColor} ${textColor} hover:opacity-80 transition-opacity`}
+                    >
+                      <span className={`w-1 h-1 rounded-full shrink-0 ${dotColor}`} />
+                      <span className="truncate">{ev.title}</span>
+                    </button>
+                  );
+                })}
                 {dayEvents.length > 2 && (
                   <span className="text-[10px] text-slate-500 dark:text-slate-400 px-1">
                     +{dayEvents.length - 2} mais
