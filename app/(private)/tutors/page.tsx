@@ -1,6 +1,7 @@
 'use client';
 
 import {
+  Eye,
   Loader2,
   Mail,
   Pencil,
@@ -9,6 +10,7 @@ import {
   Trash2,
   User,
 } from 'lucide-react';
+import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
 
 import { TutorModal } from './components/tutor-modal';
@@ -107,6 +109,7 @@ export default function TutorsPage() {
         >
           <DataTable
             headers={['Tutor', 'CPF', 'Telefone', 'E-mail', 'Cadastrado em', 'Ações']}
+            columnWidths={['', '', '', '', '', '140px']}
             showSearch={true}
             onSearch={handleSearch}
             searchPlaceholder="Buscar por nome..."
@@ -168,6 +171,15 @@ export default function TutorsPage() {
                   </td>
                   <td className="p-4">
                     <div className="flex items-center justify-end gap-1">
+                      <Link href={`/tutors/detail?id=${tutor.id}`}>
+                        <Button
+                          variant="ghost"
+                          size="icon-sm"
+                          title="Ver detalhes"
+                        >
+                          <Eye size={15} className="text-teal-600 dark:text-teal-400" />
+                        </Button>
+                      </Link>
                       <Button
                         variant="ghost"
                         size="icon-sm"

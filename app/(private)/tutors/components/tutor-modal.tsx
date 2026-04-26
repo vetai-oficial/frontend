@@ -20,6 +20,7 @@ export function TutorModal({ tutor, onClose, onSuccess }: TutorModalProps) {
   const [cpf, setCpf] = useState(tutor?.cpf ?? '');
   const [phone, setPhone] = useState(tutor?.phone ?? '');
   const [email, setEmail] = useState(tutor?.email ?? '');
+  const [address, setAddress] = useState(tutor?.address ?? '');
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -51,11 +52,13 @@ export function TutorModal({ tutor, onClose, onSuccess }: TutorModalProps) {
         const payload = { name: name.trim(), cpf: cpf.trim() } as UpdateTutorPayload;
         if (phone.trim()) payload.phone = phone.trim();
         if (email.trim()) payload.email = email.trim();
+        if (address.trim()) payload.address = address.trim();
         result = await tutorsService.update(tutor.id, payload);
       } else {
         const payload = { name: name.trim(), cpf: cpf.trim() } as CreateTutorPayload;
         if (phone.trim()) payload.phone = phone.trim();
         if (email.trim()) payload.email = email.trim();
+        if (address.trim()) payload.address = address.trim();
         result = await tutorsService.create(payload);
       }
       onSuccess(result);
@@ -121,6 +124,14 @@ export function TutorModal({ tutor, onClose, onSuccess }: TutorModalProps) {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="Ex: joao@email.com"
+          />
+
+          <InputWithLabel
+            label="Endereço"
+            type="text"
+            value={address}
+            onChange={(e) => setAddress(e.target.value)}
+            placeholder="Ex: Rua das Flores, 123 - São Paulo/SP"
           />
 
           {errors.general && <p className="text-sm text-red-500">{errors.general}</p>}

@@ -4,6 +4,7 @@ export interface Tutor {
   cpf: string;
   phone?: string;
   email?: string;
+  address?: string;
   created_at: string;
   updated_at: string;
 }
@@ -13,6 +14,7 @@ export interface CreateTutorPayload {
   cpf: string;
   phone?: string;
   email?: string;
+  address?: string;
 }
 
 export interface UpdateTutorPayload {
@@ -20,4 +22,5 @@ export interface UpdateTutorPayload {
   cpf?: string;
   phone?: string;
   email?: string;
+  address?: string;
 }

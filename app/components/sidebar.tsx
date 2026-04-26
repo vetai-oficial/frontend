@@ -7,6 +7,7 @@ import {
   LayoutDashboard,
   Microscope,
   PawPrint,
+  Pill,
   SquareActivity,
   MessageCircleQuestionMark,
   Menu,
@@ -14,6 +15,8 @@ import {
   Users,
   X,
   CalendarDays,
+  CreditCard,
+  BookOpen,
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
@@ -39,7 +42,10 @@ export function Sidebar() {
     { href: '/patients', icon: PawPrint, label: 'Pacientes' },
     { href: '/tutors', icon: Users, label: 'Tutores' },
     { href: '/vaccines', icon: Syringe, label: 'Vacinas' },
+    { href: '/medicines', icon: Pill, label: 'Medicações' },
     { href: '/schedule', icon: CalendarDays, label: 'Agendamentos' },
+    { href: '/payments', icon: CreditCard, label: 'Pagamentos' },
+    { href: '/catalog', icon: BookOpen, label: 'Catálogo' },
     { href: '/monitoring', icon: SquareActivity, label: 'Monitoramento' },
     { href: '/consultation', icon: MessageCircleQuestionMark, label: 'Consulta' },
     { href: '/settings', icon: Settings, label: 'Configurações' },

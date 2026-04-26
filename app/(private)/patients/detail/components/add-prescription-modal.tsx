@@ -8,12 +8,14 @@ import { Modal } from '@/app/components/modal';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { healthRecordsService } from '@/services/health-records.service';
+import { PRESCRIPTION_USAGE_OPTIONS } from '@/types/health-record';
 
 interface MedicationRow {
   drug: string;
   form: string;
   quantity: string;
   posology: string;
+  usage: string;
 }
 
 interface AddPrescriptionModalProps {
@@ -26,13 +28,13 @@ export function AddPrescriptionModal({ patientId, onClose, onSuccess }: AddPresc
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
   const [includeDate, setIncludeDate] = useState(true);
   const [medications, setMedications] = useState<MedicationRow[]>([
-    { drug: '', form: '', quantity: '', posology: '' },
+    { drug: '', form: '', quantity: '', posology: '', usage: 'Oral Veterinário' },
   ]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
   const addMedication = () =>
-    setMedications((prev) => [...prev, { drug: '', form: '', quantity: '', posology: '' }]);
+    setMedications((prev) => [...prev, { drug: '', form: '', quantity: '', posology: '', usage: 'Oral Veterinário' }]);
 
   const removeMedication = (i: number) =>
     setMedications((prev) => prev.filter((_, idx) => idx !== i));
@@ -58,6 +60,7 @@ export function AddPrescriptionModal({ patientId, onClose, onSuccess }: AddPresc
             form: m.form.trim() || undefined,
             quantity: m.quantity.trim() || undefined,
             posology: m.posology.trim(),
+            usage: m.usage || undefined,
           })),
         },
       });
@@ -131,6 +134,20 @@ export function AddPrescriptionModal({ patientId, onClose, onSuccess }: AddPresc
                   <Label htmlFor={`qty-${i}`} required>Quantidade</Label>
                   <input id={`qty-${i}`} value={med.quantity} onChange={(e) => updateMedication(i, 'quantity', e.target.value)} placeholder="Ex: 500mg" className={inputCls} required />
                 </div>
+              </div>
+
+              <div>
+                <Label htmlFor={`usage-${i}`}>Via de Administração</Label>
+                <select
+                  id={`usage-${i}`}
+                  value={med.usage}
+                  onChange={(e) => updateMedication(i, 'usage', e.target.value)}
+                  className={inputCls}
+                >
+                  {PRESCRIPTION_USAGE_OPTIONS.map((opt) => (
+                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                  ))}
+                </select>
               </div>
 
               <div>

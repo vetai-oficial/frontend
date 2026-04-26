@@ -1,9 +1,20 @@
+export interface UserAddress {
+  street: string;
+  number: string;
+  neighborhood: string;
+  city: string;
+  uf: string;
+  cep: string;
+}
+
 export interface User {
   id: string;
   name: string;
   email: string;
   role: string;
   crmv?: string;
+  phone?: string;
+  address?: UserAddress;
   hospital_id?: string;
 }
 

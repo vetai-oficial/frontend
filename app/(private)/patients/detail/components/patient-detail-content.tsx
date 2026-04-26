@@ -32,6 +32,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { calcAge, fmtDate, fmtDateTime, parseBirthDate, STUDY_STATUS_COLORS, STUDY_STATUS_LABELS } from '../utils';
+import { buildPrescriptionHtml, createPrescriptionBlobUrl, downloadPrescriptionAsPdf } from '../utils/prescription-pdf';
 import { AddClinicalNoteModal } from './add-clinical-note-modal';
 import { AddNoteModal } from './add-note-modal';
 import { AddPrescriptionModal } from './add-prescription-modal';
@@ -47,7 +48,7 @@ import { SectionCard } from '@/app/components/section-card';
 import { UploadExamModal } from '@/app/components/upload-exam-modal';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { SPECIE_LABELS } from '@/constants';
+import { SPECIE_LABELS, STORAGE_KEYS } from '@/constants';
 import { documentsService } from '@/services/documents.service';
 import { healthRecordsService } from '@/services/health-records.service';
 import { patientsService } from '@/services/patients.service';
@@ -73,6 +74,9 @@ export function PatientDetailContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const id = searchParams.get('id');
+  const user = typeof window !== 'undefined'
+    ? (() => { try { const s = localStorage.getItem(STORAGE_KEYS.USER); return s ? (JSON.parse(s) as import('@/types/auth').User) : null; } catch { return null; } })()
+    : null;
 
   const [patient, setPatient] = useState<Patient | null>(null);
   const [tutor, setTutor] = useState<Tutor | null>(null);
@@ -89,6 +93,7 @@ export function PatientDetailContent() {
   const [deleting, setDeleting] = useState(false);
   const [uploadingDoc, setUploadingDoc] = useState(false);
   const [viewingDoc, setViewingDoc] = useState<{ url: string; mimeType: string; fileName: string } | null>(null);
+  const [downloadingPdf, setDownloadingPdf] = useState(false);
   const [loadingDocId, setLoadingDocId] = useState<string | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<{ onConfirm: () => Promise<void> } | null>(null);
   const [confirmDeleting, setConfirmDeleting] = useState(false);
@@ -112,6 +117,7 @@ export function PatientDetailContent() {
   const [docsLoading, setDocsLoading] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const viewerIframeRef = useRef<HTMLIFrameElement>(null);
 
   const fetchPatient = useCallback(async () => {
     if (!id) return;
@@ -712,6 +718,9 @@ export function PatientDetailContent() {
               <div className="space-y-3">
                 {prescriptions.map((rec) => {
                   const meta = rec.metadata as unknown as PrescriptionMetadata;
+                  const latestWeight = weightRecords.length > 0
+                    ? (weightRecords[0]!.metadata as WeightMetadata).value
+                    : undefined;
                   return (
                     <Card key={rec.id} className="p-4">
                       <div className="flex items-start justify-between gap-3">
@@ -734,12 +743,36 @@ export function PatientDetailContent() {
                                   {med.form && <span className="text-slate-500 dark:text-slate-400 font-normal"> · {med.form}</span>}
                                   {med.quantity && <span className="text-slate-500 dark:text-slate-400 font-normal"> · {med.quantity}</span>}
                                 </p>
+                                {med.usage && (
+                                  <span className="inline-block text-[10px] font-medium text-teal-700 dark:text-teal-300 bg-teal-50 dark:bg-teal-900/30 rounded px-1.5 py-0.5 mt-0.5">
+                                    {med.usage}
+                                  </span>
+                                )}
                                 <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{med.posology}</p>
                               </div>
                             ))}
                           </div>
                         </div>
-                        <DeleteBtn onDelete={() => setDeleteConfirm({ onConfirm: () => handleDeleteRecord(rec.id, fetchPrescriptions) })} />
+                        <div className="flex items-center gap-1 shrink-0">
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon-sm"
+                            title="Visualizar receita"
+                            onClick={() => {
+                              if (patient && user) {
+                                const logoUrl = `${window.location.origin}/logo-white.png`;
+                                const html = buildPrescriptionHtml(rec, patient, tutor, user, latestWeight, logoUrl);
+                                const url = createPrescriptionBlobUrl(html);
+                                setViewingDoc({ url, mimeType: 'text/html', fileName: `Receita - ${patient.name}.pdf` });
+                              }
+                            }}
+                            className="text-slate-400 hover:text-teal-600 hover:bg-teal-50 dark:hover:bg-teal-900/20"
+                          >
+                            <FileText size={14} />
+                          </Button>
+                          <DeleteBtn onDelete={() => setDeleteConfirm({ onConfirm: () => handleDeleteRecord(rec.id, fetchPrescriptions) })} />
+                        </div>
                       </div>
                     </Card>
                   );
@@ -876,18 +909,47 @@ export function PatientDetailContent() {
 
       {viewingDoc && (
         <div className="fixed inset-0 z-50 flex flex-col bg-black/80">
-          <div className="flex items-center justify-between px-4 py-3 bg-slate-900 shrink-0">
+          <div className="flex items-center justify-between px-4 py-3 bg-teal-700 dark:bg-teal-800 shrink-0">
             <p className="text-white font-medium text-sm truncate">{viewingDoc.fileName}</p>
-            <Button variant="ghost" size="icon-sm" onClick={closeDocViewer} className="text-slate-300 hover:text-white shrink-0">
-              <X size={18} />
-            </Button>
+            <div className="flex items-center gap-1 shrink-0">
+              {viewingDoc.mimeType === 'text/html' ? (
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  title="Baixar PDF"
+                  disabled={downloadingPdf}
+                  onClick={() => {
+                    setDownloadingPdf(true);
+                    fetch(viewingDoc.url)
+                      .then((r) => r.text())
+                      .then((html) => downloadPrescriptionAsPdf(html, viewingDoc.fileName))
+                      .finally(() => setDownloadingPdf(false));
+                  }}
+                  className="text-teal-100 hover:text-white hover:bg-teal-600 dark:hover:bg-teal-700"
+                >
+                  {downloadingPdf ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
+                </Button>
+              ) : (
+                <a
+                  href={viewingDoc.url}
+                  download={viewingDoc.fileName}
+                  title="Baixar"
+                  className="inline-flex items-center justify-center rounded-md h-7 w-7 text-teal-100 hover:text-white hover:bg-teal-600 dark:hover:bg-teal-700 transition-colors"
+                >
+                  <Download size={16} />
+                </a>
+              )}
+              <Button variant="ghost" size="icon-sm" onClick={closeDocViewer} className="text-teal-100 hover:text-white hover:bg-teal-600 dark:hover:bg-teal-700">
+                <X size={18} />
+              </Button>
+            </div>
           </div>
           {viewingDoc.mimeType.startsWith('image/') ? (
             <div className="flex-1 flex items-center justify-center p-4 overflow-auto">
               <img src={viewingDoc.url} alt={viewingDoc.fileName} className="max-w-full max-h-full object-contain rounded" />
             </div>
           ) : (
-            <iframe src={viewingDoc.url} className="flex-1 w-full border-0" title={viewingDoc.fileName} />
+            <iframe ref={viewerIframeRef} src={viewingDoc.url} className="flex-1 w-full border-0" title={viewingDoc.fileName} />
           )}
         </div>
       )}
