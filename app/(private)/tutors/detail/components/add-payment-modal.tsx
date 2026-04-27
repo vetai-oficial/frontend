@@ -114,18 +114,18 @@ export function AddPaymentModal({ tutorId, pets, onClose, onSuccess }: AddPaymen
     setSaving(true);
     try {
       const result = await paymentsService.create({
-        notes: notes.trim() || undefined,
+        ...(notes.trim() ? { notes: notes.trim() } : {}),
         items: items.map((i) => ({
           name: i.name.trim(),
           quantity: Number(i.quantity),
           unit_price: Number(i.unit_price),
-          catalog_item_id: i.catalog_item_id,
+          ...(i.catalog_item_id ? { catalog_item_id: i.catalog_item_id } : {}),
         })),
         status,
         due_date: dueDate,
-        paid_at: status === 'PAID' ? (paidAt || new Date().toISOString().split('T')[0]) : undefined,
+        ...(status === 'PAID' ? { paid_at: paidAt || new Date().toISOString().split('T')[0]! } : {}),
         tutor_id: tutorId,
-        patient_id: patientId || undefined,
+        ...(patientId ? { patient_id: patientId } : {}),
       });
       onSuccess(result);
     } catch {

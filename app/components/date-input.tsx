@@ -10,7 +10,7 @@ export interface DateInputProps {
   value: string; // YYYY-MM-DD or empty
   onChange: (value: string) => void; // emits YYYY-MM-DD or ''
   label?: string;
-  error?: string;
+  error?: string | undefined;
   placeholder?: string;
   className?: string;
   containerClassName?: string;

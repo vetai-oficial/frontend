@@ -190,7 +190,7 @@ export function TutorDetailContent() {
     try {
       const updated = await paymentsService.update(confirmMarkPaid.id, {
         status: 'PAID',
-        paid_at: new Date().toISOString().split('T')[0],
+        paid_at: new Date().toISOString().split('T')[0]!,
       });
       setPendingPayments((prev) => prev.filter((p) => p.id !== confirmMarkPaid.id));
       setPaidPayments((prev) => [updated, ...prev]);
@@ -454,7 +454,7 @@ export function TutorDetailContent() {
       {confirmMarkPaid && (
         <ConfirmModal
           title="Confirmar pagamento"
-          description={`Marcar "${confirmMarkPaid.description}" como pago?`}
+          description={`Marcar cobrança de ${fmtCurrency(confirmMarkPaid.amount)} como pago?`}
           confirmLabel="Confirmar pagamento"
           variant="default"
           loading={markingPaid}
@@ -649,9 +649,9 @@ function TutorEditModal({
       const result = await tutorsService.update(tutor.id, {
         name: name.trim(),
         cpf: cpf.trim(),
-        phone: phone.trim() || undefined,
-        email: email.trim() || undefined,
-        address: address.trim() || undefined,
+        ...(phone.trim() ? { phone: phone.trim() } : {}),
+        ...(email.trim() ? { email: email.trim() } : {}),
+        ...(address.trim() ? { address: address.trim() } : {}),
       });
       onSuccess(result);
     } catch {
@@ -717,7 +717,7 @@ function FormField({
 }: {
   label: string;
   required?: boolean;
-  error?: string;
+  error?: string | undefined;
   children: React.ReactNode;
 }) {
   return (

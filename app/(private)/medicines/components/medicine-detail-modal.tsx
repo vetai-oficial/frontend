@@ -50,7 +50,7 @@ function parseDoseRange(entry: DoseEntry | undefined): { min: number; max: numbe
   if (!entry.unit.toLowerCase().includes('/kg')) return null;
   const match = entry.dose.match(/(\d+(?:[.,]\d+)?)\s*(?:a\s*(\d+(?:[.,]\d+)?))?/);
   if (!match) return null;
-  const min = parseFloat(match[1].replace(',', '.'));
+  const min = parseFloat(match[1]!.replace(',', '.'));
   const max = match[2] ? parseFloat(match[2].replace(',', '.')) : min;
   if (isNaN(min)) return null;
   return { min, max };

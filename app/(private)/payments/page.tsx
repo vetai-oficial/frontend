@@ -163,7 +163,7 @@ export default function PaymentsPage() {
   }, []);
 
   useEffect(() => {
-    void fetchPayments({ status: statusFilter, tutorId: tutorFilter?.id, page });
+    void fetchPayments({ status: statusFilter, ...(tutorFilter?.id ? { tutorId: tutorFilter.id } : {}), page });
   }, [fetchPayments, statusFilter, tutorFilter, page]);
 
   const handleStatusChange = (v: string) => {

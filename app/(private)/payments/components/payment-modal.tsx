@@ -68,7 +68,7 @@ function TutorComboBox({
     const timer = setTimeout(async () => {
       try {
         const res = await tutorsService.list({ search: query, size: 8 });
-        setResults(res.data.map((t: Tutor) => ({ id: t.id, name: t.name, phone: t.phone ?? undefined })));
+        setResults(res.data.map((t: Tutor) => ({ id: t.id, name: t.name, ...(t.phone ? { phone: t.phone } : {}) })));
       } catch { /* silently */ } finally { setLoading(false); }
     }, 300);
     return () => clearTimeout(timer);
@@ -224,23 +224,23 @@ export function PaymentModal({ payment, defaultTutor, onClose, onSuccess }: Paym
         name: i.name.trim(),
         quantity: Number(i.quantity),
         unit_price: Number(i.unit_price),
-        catalog_item_id: i.catalog_item_id,
+        ...(i.catalog_item_id ? { catalog_item_id: i.catalog_item_id } : {}),
       }));
       if (isEditing) {
         result = await paymentsService.update(payment.id, {
-          notes: notes.trim() || undefined,
+          ...(notes.trim() ? { notes: notes.trim() } : {}),
           items: mappedItems,
           status,
           due_date: dueDate,
-          paid_at: status === 'PAID' ? (paidAt || new Date().toISOString().split('T')[0]) : undefined,
+          ...(status === 'PAID' ? { paid_at: paidAt || new Date().toISOString().split('T')[0]! } : {}),
         });
       } else {
         result = await paymentsService.create({
-          notes: notes.trim() || undefined,
+          ...(notes.trim() ? { notes: notes.trim() } : {}),
           items: mappedItems,
           status,
           due_date: dueDate,
-          paid_at: status === 'PAID' ? (paidAt || new Date().toISOString().split('T')[0]) : undefined,
+          ...(status === 'PAID' ? { paid_at: paidAt || new Date().toISOString().split('T')[0]! } : {}),
           tutor_id: tutor!.id,
         });
       }

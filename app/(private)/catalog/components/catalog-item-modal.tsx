@@ -63,7 +63,7 @@ export function CatalogItemModal({ item, onClose, onSuccess }: CatalogItemModalP
     try {
       const payload: CreateCatalogItemPayload = {
         name: name.trim(),
-        description: description.trim() || undefined,
+        ...(description.trim() ? { description: description.trim() } : {}),
         price: parsedPrice,
         category,
         active,

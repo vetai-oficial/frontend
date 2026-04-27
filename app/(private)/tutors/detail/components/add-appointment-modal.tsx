@@ -56,13 +56,13 @@ export function AddAppointmentModal({ tutorId, pets, onClose, onSuccess }: AddAp
     try {
       const result = await appointmentsService.create({
         title: title.trim(),
-        description: description.trim() || undefined,
+        ...(description.trim() ? { description: description.trim() } : {}),
         date,
         start_time: startTime,
-        end_time: endTime || undefined,
+        ...(endTime ? { end_time: endTime } : {}),
         type,
         tutor_id: tutorId,
-        patient_id: patientId || undefined,
+        ...(patientId ? { patient_id: patientId } : {}),
       });
       onSuccess(result);
     } catch {
