@@ -1,48 +1,59 @@
+import { buildQuery, httpClient } from '@/infra/http-client';
+import type { PaginatedResponse, QueryParams } from '@/types/common';
 import type { ScheduleEvent } from '@/types/schedule';
 
-const STORAGE_KEY = 'vetai_schedule_events';
+type ScheduleEventPayload = Omit<ScheduleEvent, 'id'>;
 
-function loadEvents(): ScheduleEvent[] {
-  if (typeof window === 'undefined') return [];
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    return raw ? (JSON.parse(raw) as ScheduleEvent[]) : [];
-  } catch {
-    return [];
-  }
-}
-
-function saveEvents(events: ScheduleEvent[]): void {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(events));
+export interface ScheduleListParams extends QueryParams {
+  patientName?: string;
+  tutorName?: string;
+  date?: string;
 }
 
 export const scheduleService = {
-  list(): ScheduleEvent[] {
-    return loadEvents();
+  async list(params?: ScheduleListParams): Promise<ScheduleEvent[]> {
+    const response = await httpClient<PaginatedResponse<ScheduleEvent>>(
+      `schedule/events${buildQuery(params)}`,
+    );
+    return response.data;
   },
 
-  listByDate(date: string): ScheduleEvent[] {
-    return loadEvents().filter((e) => e.date === date);
+  async listByDate(date: string): Promise<ScheduleEvent[]> {
+    return this.list({ date, size: 500, sort: 'startTime', direction: 'asc' });
   },
 
-  create(data: Omit<ScheduleEvent, 'id'>): ScheduleEvent {
-    const events = loadEvents();
-    const event: ScheduleEvent = { ...data, id: crypto.randomUUID() };
-    saveEvents([...events, event]);
-    return event;
+  async listByPatient(patientName: string, fromDate?: string): Promise<ScheduleEvent[]> {
+    const params: ScheduleListParams = {
+      patientName,
+      size: 500,
+      sort: 'date',
+      direction: 'asc',
+    };
+    if (fromDate) {
+      params.date = fromDate;
+    }
+    return this.list(params);
   },
 
-  update(id: string, data: Partial<Omit<ScheduleEvent, 'id'>>): ScheduleEvent {
-    const events = loadEvents();
-    const idx = events.findIndex((e) => e.id === id);
-    if (idx === -1) throw new Error('Evento não encontrado');
-    events[idx] = { ...events[idx]!, ...data };
-    saveEvents(events);
-    return events[idx]!;
+  get(id: string) {
+    return httpClient<ScheduleEvent>(`schedule/events/${id}`);
   },
 
-  delete(id: string): void {
-    const events = loadEvents().filter((e) => e.id !== id);
-    saveEvents(events);
+  create(data: ScheduleEventPayload) {
+    return httpClient<ScheduleEvent>('schedule/events', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
+  update(id: string, data: Partial<ScheduleEventPayload>) {
+    return httpClient<ScheduleEvent>(`schedule/events/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+  },
+
+  delete(id: string) {
+    return httpClient<void>(`schedule/events/${id}`, { method: 'DELETE' });
   },
 };
