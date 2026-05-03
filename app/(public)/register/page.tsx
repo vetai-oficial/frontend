@@ -1,60 +1,43 @@
 'use client';
 
-import { Activity, Eye, EyeOff, Loader2 } from 'lucide-react';
+import { yupResolver } from '@hookform/resolvers/yup';
+import { Activity, Eye, EyeOff } from 'lucide-react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+import { useForm } from 'react-hook-form';
 
-import { AuthPanel } from '@/app/components/auth-panel';
-import {
-  PasswordStrength,
-  isPasswordStrong,
-} from '@/app/components/password-strength';
+import { AuthPanel } from '@/app/components/common/auth-panel';
+import { PasswordStrength } from '@/app/components/common/password-strength';
+import { InputWithLabel } from '@/app/components/forms/input-with-label';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { STORAGE_KEYS } from '@/constants';
-import { ApiError, setToken } from '@/infra/http-client';
-import { authService } from '@/services/auth.service';
+import { useAuth } from '@/infra/auth-context';
+import { registerSchema, type RegisterFormData } from '@/schemas/auth';
 
 export default function RegisterPage() {
-  const router = useRouter();
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+  const { register } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setError('');
+  const {
+    control,
+    handleSubmit,
+    watch,
+    formState: { errors },
+  } = useForm<RegisterFormData>({
+    resolver: yupResolver(registerSchema),
+  });
 
-    if (!isPasswordStrong(password)) {
-      setError('A senha não atende todos os requisitos.');
-      return;
-    }
+  const password = watch('password', '');
 
-    if (password !== confirmPassword) {
-      setError('As senhas não coincidem.');
-      return;
-    }
-
+  async function onSubmit(data: RegisterFormData) {
     setLoading(true);
 
     try {
-      const response = await authService.register({ name, email, password });
-      setToken(response.access_token);
-      localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(response.user));
-      router.push('/analytics/dashboard');
-    } catch (err) {
-      if (err instanceof ApiError) {
-        setError(err.message);
-      } else {
-        setError('Ocorreu um erro inesperado. Tente novamente.');
-      }
+      const inviteToken = new URLSearchParams(window.location.search).get(
+        'invite_token',
+      );
+      await register(data.name, data.email, data.password);
     } finally {
       setLoading(false);
     }
@@ -84,109 +67,89 @@ export default function RegisterPage() {
             Preencha os dados abaixo para começar.
           </p>
 
-          {error && (
-            <div className='mb-6 p-4 rounded-lg bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 text-sm'>
-              {error}
-            </div>
-          )}
-
-          <form onSubmit={handleSubmit} className='space-y-5'>
+          <form onSubmit={handleSubmit(onSubmit)} className='space-y-5'>
             <div className='space-y-2'>
-              <Label htmlFor='name'>Nome completo</Label>
-              <Input
-                id='name'
+              <InputWithLabel
+                label='Nome completo'
                 type='text'
                 placeholder='Dr(a). João Silva'
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                required
+                name='name'
+                control={control}
                 autoComplete='name'
                 className='h-11'
+                error={errors.name?.message}
               />
             </div>
 
             <div className='space-y-2'>
-              <Label htmlFor='email'>Email</Label>
-              <Input
-                id='email'
+              <InputWithLabel
+                label='Email'
                 type='email'
                 placeholder='seu@email.com'
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
+                name='email'
+                control={control}
                 autoComplete='email'
                 className='h-11'
+                error={errors.email?.message}
               />
             </div>
 
             <div className='space-y-2'>
-              <Label htmlFor='password'>Senha</Label>
-              <div className='relative'>
-                <Input
-                  id='password'
-                  type={showPassword ? 'text' : 'password'}
-                  placeholder='Crie uma senha forte'
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  autoComplete='new-password'
-                  className='h-11 pr-10'
-                />
-                <button
-                  type='button'
-                  onClick={() => setShowPassword(!showPassword)}
-                  className='absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600'
-                >
-                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                </button>
-              </div>
+              <InputWithLabel
+                label='Senha'
+                type={showPassword ? 'text' : 'password'}
+                placeholder='Crie uma senha forte'
+                name='password'
+                control={control}
+                autoComplete='new-password'
+                className='h-11 pr-10'
+                error={errors.password?.message}
+                endAdornment={
+                  <button
+                    type='button'
+                    onClick={() => setShowPassword(!showPassword)}
+                    className='text-slate-400 hover:text-slate-600'
+                  >
+                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                }
+              />
             </div>
 
             <div className='space-y-2'>
-              <Label htmlFor='confirmPassword'>Confirmar senha</Label>
-              <div className='relative'>
-                <Input
-                  id='confirmPassword'
-                  type={showConfirmPassword ? 'text' : 'password'}
-                  placeholder='Confirme sua senha'
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  required
-                  autoComplete='new-password'
-                  className='h-11 pr-10'
-                />
-                <button
-                  type='button'
-                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  className='absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600'
-                >
-                  {showConfirmPassword ? (
-                    <EyeOff size={18} />
-                  ) : (
-                    <Eye size={18} />
-                  )}
-                </button>
-              </div>
-              {confirmPassword && confirmPassword !== password && (
-                <p className='text-xs text-red-500'>As senhas não coincidem.</p>
-              )}
+              <InputWithLabel
+                label='Confirmar senha'
+                type={showConfirmPassword ? 'text' : 'password'}
+                placeholder='Confirme sua senha'
+                name='confirmPassword'
+                control={control}
+                autoComplete='new-password'
+                className='h-11 pr-10'
+                error={errors.confirmPassword?.message}
+                endAdornment={
+                  <button
+                    type='button'
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className='text-slate-400 hover:text-slate-600'
+                  >
+                    {showConfirmPassword ? (
+                      <EyeOff size={18} />
+                    ) : (
+                      <Eye size={18} />
+                    )}
+                  </button>
+                }
+              />
             </div>
 
             <PasswordStrength password={password} />
 
             <Button
               type='submit'
-              disabled={loading}
+              loading={loading}
               className='w-full h-11 bg-teal-600 hover:bg-teal-700 text-white'
             >
-              {loading ? (
-                <>
-                  <Loader2 size={18} className='animate-spin' /> Criando
-                  conta...
-                </>
-              ) : (
-                'Criar Conta'
-              )}
+              Criar conta
             </Button>
           </form>
 

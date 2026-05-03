@@ -12,7 +12,7 @@ import { TodayEventsList } from './components/today-events-list';
 import { WeekCalendar } from './components/week-calendar';
 import { MONTH_NAMES, toLocalDateStr } from './utils';
 
-import { Header } from '@/app/components/header';
+import { Header } from '@/app/components/layout/header';
 import { Button } from '@/components/ui/button';
 import { scheduleService } from '@/services/schedule.service';
 import type { ScheduleEvent } from '@/types/schedule';
@@ -54,18 +54,25 @@ export default function SchedulePage() {
   const [currentMonth, setCurrentMonth] = useState(now.getMonth());
   const [weekStart, setWeekStart] = useState<Date>(() => getWeekStart(todayStr));
   const [events, setEvents] = useState<ScheduleEvent[]>([]);
+  const [loadingEvents, setLoadingEvents] = useState(false);
   const [selectedDate, setSelectedDate] = useState<string>(todayStr);
   const [detailEvent, setDetailEvent] = useState<ScheduleEvent | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
   const [addInitialDate, setAddInitialDate] = useState<string | undefined>(undefined);
   const [editingEvent, setEditingEvent] = useState<ScheduleEvent | null>(null);
 
-  const loadEvents = useCallback(() => {
-    setEvents(scheduleService.list());
+  const loadEvents = useCallback(async () => {
+    setLoadingEvents(true);
+    try {
+      const nextEvents = await scheduleService.list({ size: 500, sort: 'date', direction: 'asc' });
+      setEvents(nextEvents);
+    } finally {
+      setLoadingEvents(false);
+    }
   }, []);
 
   useEffect(() => {
-    loadEvents();
+    void loadEvents();
   }, [loadEvents]);
 
   function prevPeriod() {
@@ -106,14 +113,14 @@ export default function SchedulePage() {
     setShowAddModal(true);
   }
 
-  function handleEventSaved() {
-    loadEvents();
+  async function handleEventSaved() {
+    await loadEvents();
     setShowAddModal(false);
     setEditingEvent(null);
   }
 
-  function handleEventDeleted() {
-    loadEvents();
+  async function handleEventDeleted() {
+    await loadEvents();
   }
 
   const selectedEvents = events.filter((e) => e.date === selectedDate);
@@ -181,7 +188,7 @@ export default function SchedulePage() {
                 <Calendar
                   year={currentYear}
                   month={currentMonth}
-                  events={events}
+                  events={loadingEvents ? [] : events}
                   selectedDate={selectedDate}
                   today={todayStr}
                   onSelectDate={setSelectedDate}
@@ -190,7 +197,7 @@ export default function SchedulePage() {
               ) : (
                 <WeekCalendar
                   weekStart={weekStart}
-                  events={events}
+                  events={loadingEvents ? [] : events}
                   today={todayStr}
                   startHour={scheduleSettings.weekStartHour}
                   endHour={scheduleSettings.weekEndHour}
@@ -200,6 +207,7 @@ export default function SchedulePage() {
 
               <div className="mt-4 flex justify-end">
                 <Button
+                  disabled={loadingEvents}
                   onClick={() => handleAddClick(selectedDate)}
                   className="bg-teal-600 hover:bg-teal-700 text-white border-teal-600 gap-1.5"
                 >
@@ -211,7 +219,7 @@ export default function SchedulePage() {
             <div className="w-full xl:w-80 bg-white dark:bg-slate-800 rounded-xl shadow p-4 sm:p-6 xl:h-fit xl:sticky xl:top-6">
               <TodayEventsList
                 date={selectedDate}
-                events={selectedEvents}
+                events={loadingEvents ? [] : selectedEvents}
                 onEventClick={setDetailEvent}
                 onAddClick={() => handleAddClick(selectedDate)}
               />

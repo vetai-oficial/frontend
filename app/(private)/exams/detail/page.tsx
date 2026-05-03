@@ -5,7 +5,7 @@ import { Suspense } from 'react';
 
 import { ExamDetailContent } from './components/exam-detail-content';
 
-import { Header } from '@/app/components/header';
+import { Header } from '@/app/components/layout/header';
 
 export default function ExamDetailPage() {
   return (

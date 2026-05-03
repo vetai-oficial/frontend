@@ -40,11 +40,11 @@ import { AddWeightModal } from './add-weight-modal';
 import { DeleteBtn } from './delete-btn';
 import { InfoCard } from './info-card';
 
-import { Card } from '@/app/components/card';
-import { ConfirmModal } from '@/app/components/confirm-modal';
-import { PatientModal } from '@/app/components/patient-modal';
-import { SectionCard } from '@/app/components/section-card';
-import { UploadExamModal } from '@/app/components/upload-exam-modal';
+import { Card } from '@/app/components/common/card';
+import { ConfirmModal } from '@/app/components/common/confirm-modal';
+import { PatientModal } from '@/app/components/business/patient-modal';
+import { SectionCard } from '@/app/components/data/section-card';
+import { UploadExamModal } from '@/app/components/business/upload-exam-modal';
 import { Button } from '@/components/ui/button';
 import { SPECIE_LABELS } from '@/constants';
 import { documentsService } from '@/services/documents.service';
@@ -189,14 +189,16 @@ export function PatientDetailContent() {
 
   useEffect(() => {
     if (!patient) return;
-    const today = new Date();
-    const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
-    const all = scheduleService.list();
-    const upcoming = all
-      .filter((e) => e.patientName === patient.name && e.date >= todayStr)
-      .sort((a, b) => a.date.localeCompare(b.date) || a.startTime.localeCompare(b.startTime))
-      .slice(0, 5);
-    setUpcomingEvents(upcoming);
+    const patientName = patient.name;
+
+    async function loadUpcomingEvents() {
+      const today = new Date();
+      const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+      const all = await scheduleService.listByPatient(patientName, todayStr);
+      setUpcomingEvents(all.slice(0, 5));
+    }
+
+    void loadUpcomingEvents();
   }, [patient]);
 
   useEffect(() => { void fetchExams(); }, [fetchExams]);

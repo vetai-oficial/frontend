@@ -7,9 +7,9 @@ import { useCallback, useEffect, useState } from 'react';
 
 import { formatReference } from '../utils';
 
-import { Badge } from '@/app/components/badge';
-import { Card } from '@/app/components/card';
-import { SectionCard } from '@/app/components/section-card';
+import { Badge } from '@/app/components/common/badge';
+import { Card } from '@/app/components/common/card';
+import { SectionCard } from '@/app/components/data/section-card';
 import { Button } from '@/components/ui/button';
 import { STUDY_STATUS_MAP } from '@/constants';
 import { studiesService } from '@/services/studies.service';

@@ -1,6 +1,6 @@
 import { CalendarDays, Clock, Pencil, PawPrint, Trash2, User } from 'lucide-react';
 
-import { Modal } from '@/app/components/modal';
+import { Modal } from '@/app/components/common/modal';
 import { Button } from '@/components/ui/button';
 import { scheduleService } from '@/services/schedule.service';
 import type { ScheduleEvent } from '@/types/schedule';
@@ -16,8 +16,8 @@ interface EventDetailModalProps {
 export function EventDetailModal({ event, onClose, onDelete, onEdit }: EventDetailModalProps) {
   const typeInfo = EVENT_TYPE_MAP[event.type];
 
-  function handleDelete() {
-    scheduleService.delete(event.id);
+  async function handleDelete() {
+    await scheduleService.delete(event.id);
     onDelete(event.id);
     onClose();
   }
@@ -90,7 +90,9 @@ export function EventDetailModal({ event, onClose, onDelete, onEdit }: EventDeta
         <div className="flex justify-between items-center pt-2 border-t border-slate-100 dark:border-slate-700">
           <Button
             variant="ghost"
-            onClick={handleDelete}
+            onClick={() => {
+              void handleDelete();
+            }}
             className="gap-1.5 text-red-600 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:text-red-300 dark:hover:bg-red-900/20"
           >
             <Trash2 size={15} /> Excluir

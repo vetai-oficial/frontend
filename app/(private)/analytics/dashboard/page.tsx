@@ -4,10 +4,10 @@ import { CalendarCheck, Microscope, PawPrint, RefreshCcw } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
 
-import { Badge } from '@/app/components/badge';
-import { Card } from '@/app/components/card';
-import { DataTable } from '@/app/components/data-table';
-import { SectionCard } from '@/app/components/section-card';
+import { Badge } from '@/app/components/common/badge';
+import { Card } from '@/app/components/common/card';
+import { DataTable } from '@/app/components/data/data-table';
+import { SectionCard } from '@/app/components/data/section-card';
 import { AnalyticsChart } from '@/components/AnalyticsChart';
 import { MetricCard } from '@/components/MetricCard';
 import { Button } from '@/components/ui/button';
@@ -52,8 +52,12 @@ export default function Dashboard() {
   }, []);
 
   useEffect(() => {
-    const events = scheduleService.listByDate(todayIso());
-    setTodayEvents(events.sort((a, b) => a.startTime.localeCompare(b.startTime)));
+    async function loadTodayEvents() {
+      const events = await scheduleService.listByDate(todayIso());
+      setTodayEvents(events);
+    }
+
+    void loadTodayEvents();
   }, []);
 
   const patients = data?.latest_patients ?? [];

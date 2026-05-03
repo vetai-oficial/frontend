@@ -1,42 +1,35 @@
 'use client';
 
-import { Activity, Eye, EyeOff, Loader2 } from 'lucide-react';
+import { yupResolver } from '@hookform/resolvers/yup';
+import { Activity, Eye, EyeOff } from 'lucide-react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+import { useForm } from 'react-hook-form';
 
-import { AuthPanel } from '@/app/components/auth-panel';
+import { AuthPanel } from '@/app/components/common/auth-panel';
+import { InputWithLabel } from '@/app/components/forms/input-with-label';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { STORAGE_KEYS } from '@/constants';
-import { ApiError, setToken } from '@/infra/http-client';
-import { authService } from '@/services/auth.service';
+import { useAuth } from '@/infra/auth-context';
+import { loginSchema, type LoginFormData } from '@/schemas/auth';
 
 export default function LoginPage() {
-  const router = useRouter();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const { login } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
-  const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setError('');
+  const {
+    control,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<LoginFormData>({
+    resolver: yupResolver(loginSchema),
+  });
+
+  async function onSubmit(data: LoginFormData) {
     setLoading(true);
 
     try {
-      const response = await authService.login({ email, password });
-      setToken(response.access_token);
-      localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(response.user));
-      router.push('/analytics/dashboard');
-    } catch (err) {
-      if (err instanceof ApiError) {
-        setError(err.message);
-      } else {
-        setError('Ocorreu um erro inesperado. Tente novamente.');
-      }
+      await login(data.email, data.password);
     } finally {
       setLoading(false);
     }
@@ -66,30 +59,47 @@ export default function LoginPage() {
             Digite suas credenciais para acessar o painel.
           </p>
 
-          {error && (
-            <div className='mb-6 p-4 rounded-lg bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 text-sm'>
-              {error}
-            </div>
-          )}
-
-          <form onSubmit={handleSubmit} className='space-y-5'>
+          <form onSubmit={handleSubmit(onSubmit)} className='space-y-5'>
             <div className='space-y-2'>
-              <Label htmlFor='email'>Email</Label>
-              <Input
-                id='email'
+              <InputWithLabel
+                label='Email'
                 type='email'
                 placeholder='seu@email.com'
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
+                name='email'
+                control={control}
                 autoComplete='email'
                 className='h-11'
+                error={errors.email?.message}
               />
             </div>
 
             <div className='space-y-2'>
-              <div className='flex items-center justify-between'>
-                <Label htmlFor='password'>Senha</Label>
+              <div className='flex items-end justify-between gap-4'>
+                <div className='flex-1'>
+                  <InputWithLabel
+                    label='Senha'
+                    type={showPassword ? 'text' : 'password'}
+                    placeholder='Sua senha'
+                    name='password'
+                    control={control}
+                    autoComplete='current-password'
+                    className='h-11 pr-10'
+                    error={errors.password?.message}
+                    endAdornment={
+                      <button
+                        type='button'
+                        onClick={() => setShowPassword(!showPassword)}
+                        className='text-slate-400 hover:text-slate-600'
+                      >
+                        {showPassword ? (
+                          <EyeOff size={18} />
+                        ) : (
+                          <Eye size={18} />
+                        )}
+                      </button>
+                    }
+                  />
+                </div>
                 <Link
                   href='/forgot-password'
                   className='text-xs text-teal-600 hover:text-teal-700 dark:text-teal-400'
@@ -97,39 +107,14 @@ export default function LoginPage() {
                   Esqueceu a senha?
                 </Link>
               </div>
-              <div className='relative'>
-                <Input
-                  id='password'
-                  type={showPassword ? 'text' : 'password'}
-                  placeholder='Sua senha'
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  autoComplete='current-password'
-                  className='h-11 pr-10'
-                />
-                <button
-                  type='button'
-                  onClick={() => setShowPassword(!showPassword)}
-                  className='absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600'
-                >
-                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                </button>
-              </div>
             </div>
 
             <Button
               type='submit'
-              disabled={loading}
+              loading={loading}
               className='w-full h-11 bg-teal-600 hover:bg-teal-700 text-white'
             >
-              {loading ? (
-                <>
-                  <Loader2 size={18} className='animate-spin' /> Entrando...
-                </>
-              ) : (
-                'Entrar'
-              )}
+              Entrar
             </Button>
           </form>
 

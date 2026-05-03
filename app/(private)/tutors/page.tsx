@@ -13,65 +13,53 @@ import { useCallback, useEffect, useState } from 'react';
 
 import { TutorModal } from './components/tutor-modal';
 
-import { DataTable } from '@/app/components/data-table';
-import { Header } from '@/app/components/header';
-import { SectionCard } from '@/app/components/section-card';
+import { DataTable } from '@/app/components/data/data-table';
+import { Header } from '@/app/components/layout/header';
+import { SectionCard } from '@/app/components/data/section-card';
 import { Button } from '@/components/ui/button';
+import { usePaginatedResource } from '@/hooks/use-paginated-resource';
 import { tutorsService } from '@/services/tutors.service';
-import type { PaginatedMeta } from '@/types/common';
 import type { Tutor } from '@/types/tutor';
 
 export default function TutorsPage() {
-  const [tutors, setTutors] = useState<Tutor[]>([]);
-  const [meta, setMeta] = useState<PaginatedMeta | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState('');
-
   const [showModal, setShowModal] = useState(false);
   const [editingTutor, setEditingTutor] = useState<Tutor | undefined>(undefined);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [confirmDeleteTutor, setConfirmDeleteTutor] = useState<Tutor | null>(null);
 
-  const fetchTutors = useCallback(async (searchQuery?: string, page = 1) => {
-    setLoading(true);
-    try {
-      const response = await tutorsService.list({ page, size: 10, search: searchQuery });
-      setTutors(response.data);
-      setMeta(response.meta);
-    } catch {
-      // silently fail
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => { void fetchTutors(); }, [fetchTutors]);
-
-  const handleSearch = (value: string) => {
-    setSearch(value);
-    void fetchTutors(value);
-  };
+  const {
+    items: tutors,
+    meta,
+    loading,
+    search,
+    setSearch,
+    prependItem,
+    replaceItem,
+    removeItem,
+  } = usePaginatedResource<Tutor, { search?: string }>({
+    fetcher: tutorsService.list,
+    initialFilters: { search: '' },
+    pageSize: 10,
+    debounceMs: 300,
+  });
 
   const handleCreateSuccess = (tutor: Tutor) => {
     setShowModal(false);
-    setTutors((prev) => [tutor, ...prev]);
-    setMeta((prev) => prev ? { ...prev, total_elements: prev.total_elements + 1 } : prev);
+    prependItem(tutor);
   };
 
   const handleEditSuccess = (updated: Tutor) => {
     setShowModal(false);
     setEditingTutor(undefined);
-    setTutors((prev) => prev.map((t) => (t.id === updated.id ? updated : t)));
+    replaceItem((t) => t.id === updated.id, updated);
   };
 
   const handleDelete = async (tutor: Tutor) => {
     setDeletingId(tutor.id);
     try {
       await tutorsService.delete(tutor.id);
-      setTutors((prev) => prev.filter((t) => t.id !== tutor.id));
-      setMeta((prev) => prev ? { ...prev, total_elements: prev.total_elements - 1 } : prev);
+      removeItem((t) => t.id === tutor.id);
     } catch {
-      // silently fail
     } finally {
       setDeletingId(null);
       setConfirmDeleteTutor(null);
@@ -108,7 +96,7 @@ export default function TutorsPage() {
           <DataTable
             headers={['Tutor', 'CPF', 'Telefone', 'E-mail', 'Cadastrado em', 'Ações']}
             showSearch={true}
-            onSearch={handleSearch}
+            onSearch={setSearch}
             searchPlaceholder="Buscar por nome..."
           >
             {loading ? (

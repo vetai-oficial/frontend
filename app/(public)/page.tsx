@@ -19,8 +19,8 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 
-import { Counter } from '@/app/components/counter';
-import { Reveal } from '@/app/components/reveal';
+import { Counter } from '@/app/components/common/counter';
+import { Reveal } from '@/app/components/common/reveal';
 import { Button } from '@/components/ui/button';
 
 const FEATURES = [

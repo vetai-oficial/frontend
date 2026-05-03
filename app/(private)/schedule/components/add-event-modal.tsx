@@ -1,15 +1,21 @@
 'use client';
 
-import { Check, ChevronDown, PawPrint, User, X } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { yupResolver } from '@hookform/resolvers/yup';
+import { useState } from 'react';
+import { Controller, useForm, type Resolver } from 'react-hook-form';
 
-import { toLocalDateStr } from '../utils';
-
-import { Modal } from '@/app/components/modal';
-import { SelectInput } from '@/app/components/select-input';
-import { TimeInput } from '@/app/components/time-input';
+import { FormTextarea } from '@/app/components/forms/form-textarea';
+import { InputWithLabel } from '@/app/components/forms/input-with-label';
+import { Modal } from '@/app/components/common/modal';
+import { SearchSelect } from '@/app/components/forms/search-select';
+import { SelectInput } from '@/app/components/forms/select-input';
+import { TimeInput } from '@/app/components/forms/time-input';
 import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
+import { usePaginatedResource } from '@/hooks/use-paginated-resource';
+import {
+  scheduleEventSchema,
+  type ScheduleEventFormData,
+} from '@/schemas/schedule';
 import { patientsService } from '@/services/patients.service';
 import { scheduleService } from '@/services/schedule.service';
 import { tutorsService } from '@/services/tutors.service';
@@ -17,366 +23,301 @@ import type { Patient } from '@/types/patient';
 import type { EventType, ScheduleEvent } from '@/types/schedule';
 import { EVENT_TYPE_MAP } from '@/types/schedule';
 import type { Tutor } from '@/types/tutor';
+import { toLocalDateStr } from '../utils';
 
-function toInternalDate(display: string): string {
-  // dd/mm/YYYY → YYYY-MM-DD
-  const parts = display.split('/');
-  if (parts.length !== 3 || (parts[2] ?? '').length !== 4) return '';
-  return `${parts[2]}-${String(parts[1]).padStart(2, '0')}-${String(parts[0]).padStart(2, '0')}`;
-}
-
-function toDisplayDate(internal: string): string {
-  // YYYY-MM-DD → dd/mm/YYYY
-  if (!internal) return '';
-  const [y, m, d] = internal.split('-');
-  return `${d}/${m}/${y}`;
-}
-
-function maskDateInput(raw: string): string {
-  const digits = raw.replace(/\D/g, '').slice(0, 8);
-  if (digits.length <= 2) return digits;
-  if (digits.length <= 4) return `${digits.slice(0, 2)}/${digits.slice(2)}`;
-  return `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4)}`;
-}
-
-interface ComboBoxItem { id: string; label: string; sub?: string | undefined }
-
-interface ComboBoxProps {
-  placeholder: string;
-  icon: React.ReactNode;
-  value: ComboBoxItem | null;
-  inputValue: string;
-  onInputChange: (v: string) => void;
-  results: ComboBoxItem[];
-  loading: boolean;
-  onSelect: (item: ComboBoxItem) => void;
-  onClear: () => void;
-  open: boolean;
-  onOpenChange: (o: boolean) => void;
-  inputCls: string;
-}
-
-function ComboBox({
-  placeholder, icon, value, inputValue, onInputChange, results, loading,
-  onSelect, onClear, open, onOpenChange, inputCls,
-}: ComboBoxProps) {
-  const ref = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    function handleClick(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) onOpenChange(false);
-    }
-    document.addEventListener('mousedown', handleClick);
-    return () => document.removeEventListener('mousedown', handleClick);
-  }, [onOpenChange]);
-
-  return (
-    <div ref={ref} className="relative">
-      {value ? (
-        <div className="flex items-center gap-2 w-full rounded-lg border border-teal-400 dark:border-teal-600 bg-teal-50 dark:bg-teal-900/20 px-3 py-2">
-          <span className="text-teal-600 dark:text-teal-400 shrink-0">{icon}</span>
-          <span className="flex-1 text-sm font-medium text-slate-900 dark:text-white truncate">{value.label}</span>
-          {value.sub && <span className="text-xs text-slate-500 dark:text-slate-400 truncate shrink-0">{value.sub}</span>}
-          <Button type="button" variant="ghost" size="icon-sm" onClick={onClear} className="shrink-0 text-slate-400 hover:text-red-500">
-            <X size={14} />
-          </Button>
-        </div>
-      ) : (
-        <div className="relative">
-          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">{icon}</span>
-          <input
-            className={`${inputCls} pl-8 pr-8`}
-            placeholder={placeholder}
-            value={inputValue}
-            onChange={(e) => { onInputChange(e.target.value); onOpenChange(true); }}
-            onFocus={() => onOpenChange(true)}
-          />
-          <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
-        </div>
-      )}
-
-      {open && !value && (
-        <div className="absolute z-50 left-0 right-0 mt-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-lg shadow-lg max-h-52 overflow-y-auto">
-          {loading ? (
-            <p className="text-xs text-slate-400 px-3 py-2">Buscando...</p>
-          ) : results.length === 0 ? (
-            <p className="text-xs text-slate-400 px-3 py-2">
-              {inputValue.length < 2 ? 'Digite para buscar…' : 'Nenhum resultado'}
-            </p>
-          ) : (
-            results.map((r) => (
-              <Button
-                key={r.id}
-                type="button"
-                variant="ghost"
-                onMouseDown={(e) => { e.preventDefault(); onSelect(r); onOpenChange(false); }}
-                className="w-full justify-start px-3 py-2 h-auto rounded-none"
-              >
-                <Check size={12} className="text-teal-500 opacity-0 group-hover:opacity-100" />
-                <div className="min-w-0 text-left">
-                  <p className="text-sm text-slate-900 dark:text-white truncate">{r.label}</p>
-                  {r.sub && <p className="text-xs text-slate-500 dark:text-slate-400 truncate">{r.sub}</p>}
-                </div>
-              </Button>
-            ))
-          )}
-        </div>
-      )}
-    </div>
-  );
-}
-
-interface EventFormState {
-  title: string;
-  description: string;
-  dateDisplay: string; // dd/mm/YYYY
-  startTime: string;
-  endTime: string;
-  type: EventType;
+interface ComboBoxItem {
+  id: string;
+  label: string;
+  description?: string | undefined;
 }
 
 interface AddEventModalProps {
-  initialDate?: string | undefined; // YYYY-MM-DD
-  event?: ScheduleEvent; // if provided → edit mode
+  initialDate?: string | undefined;
+  event?: ScheduleEvent;
   onClose: () => void;
   onSave: (event: ScheduleEvent) => void;
   minHour?: number;
   maxHour?: number;
 }
 
-export function AddEventModal({ initialDate, event: editingEvent, onClose, onSave, minHour = 0, maxHour = 23 }: AddEventModalProps) {
+export function AddEventModal({
+  initialDate,
+  event: editingEvent,
+  onClose,
+  onSave,
+  minHour = 0,
+  maxHour = 23,
+}: AddEventModalProps) {
   const isEditing = !!editingEvent;
-
-  const [form, setForm] = useState<EventFormState>({
-    title: editingEvent?.title ?? '',
-    description: editingEvent?.description ?? '',
-    dateDisplay: toDisplayDate(editingEvent?.date ?? initialDate ?? toLocalDateStr(new Date())),
-    startTime: editingEvent?.startTime ?? '',
-    endTime: editingEvent?.endTime ?? '',
-    type: editingEvent?.type ?? 'consultation',
-  });
-  const [error, setError] = useState('');
-
-  // Patient combobox
-  const [patientQuery, setPatientQuery] = useState('');
-  const [patientResults, setPatientResults] = useState<ComboBoxItem[]>([]);
-  const [patientLoading, setPatientLoading] = useState(false);
   const [patientOpen, setPatientOpen] = useState(false);
-  const [selectedPatient, setSelectedPatient] = useState<ComboBoxItem | null>(
-    editingEvent?.patientName ? { id: editingEvent.patientName, label: editingEvent.patientName } : null,
-  );
-
-  // Tutor combobox
-  const [tutorQuery, setTutorQuery] = useState('');
-  const [tutorResults, setTutorResults] = useState<ComboBoxItem[]>([]);
-  const [tutorLoading, setTutorLoading] = useState(false);
   const [tutorOpen, setTutorOpen] = useState(false);
+  const [selectedPatient, setSelectedPatient] = useState<(ComboBoxItem & { tutorId?: string }) | null>(
+    editingEvent?.patientName
+      ? { id: editingEvent.patientName, label: editingEvent.patientName }
+      : null,
+  );
   const [selectedTutor, setSelectedTutor] = useState<ComboBoxItem | null>(
-    editingEvent?.tutorName ? { id: editingEvent.tutorName, label: editingEvent.tutorName } : null,
+    editingEvent?.tutorName
+      ? { id: editingEvent.tutorName, label: editingEvent.tutorName }
+      : null,
   );
 
-  // Debounced patient search
-  useEffect(() => {
-    if (patientQuery.length < 2) { setPatientResults([]); return; }
-    setPatientLoading(true);
-    const timer = setTimeout(async () => {
-      try {
-        const res = await patientsService.list({ search: patientQuery, size: 8 });
-        setPatientResults(res.data.map((p: Patient) => ({ id: p.id, label: p.name, sub: p.breed ?? undefined, _tutor_id: p.tutor_id } as ComboBoxItem & { _tutor_id: string })));
-      } catch { /* silently */ } finally { setPatientLoading(false); }
-    }, 300);
-    return () => clearTimeout(timer);
-  }, [patientQuery]);
+  const {
+    items: patients,
+    loading: patientLoading,
+    search: patientSearch,
+    setSearch: setPatientSearch,
+  } = usePaginatedResource<Patient, { search?: string }>({
+    fetcher: patientsService.list,
+    initialFilters: { search: '' },
+    pageSize: 8,
+    debounceMs: 300,
+  });
 
-  // Debounced tutor search
-  useEffect(() => {
-    if (tutorQuery.length < 2) { setTutorResults([]); return; }
-    setTutorLoading(true);
-    const timer = setTimeout(async () => {
-      try {
-        const res = await tutorsService.list({ search: tutorQuery, size: 8 });
-        setTutorResults(res.data.map((t: Tutor) => ({ id: t.id, label: t.name, sub: t.phone ?? t.email ?? undefined })));
-      } catch { /* silently */ } finally { setTutorLoading(false); }
-    }, 300);
-    return () => clearTimeout(timer);
-  }, [tutorQuery]);
+  const {
+    items: tutors,
+    loading: tutorLoading,
+    search: tutorSearch,
+    setSearch: setTutorSearch,
+  } = usePaginatedResource<Tutor, { search?: string }>({
+    fetcher: tutorsService.list,
+    initialFilters: { search: '' },
+    pageSize: 8,
+    debounceMs: 300,
+  });
 
-  async function handleSelectPatient(item: ComboBoxItem) {
-    setSelectedPatient(item);
-    setPatientQuery('');
-    // Auto-fill tutor from patient
-    const tutorId = (item as ComboBoxItem & { _tutor_id?: string })._tutor_id;
-    if (tutorId && !selectedTutor) {
+  const {
+    control,
+    handleSubmit,
+    setValue,
+    formState: { errors },
+  } = useForm<ScheduleEventFormData>({
+    resolver: yupResolver(scheduleEventSchema) as Resolver<ScheduleEventFormData>,
+    defaultValues: {
+      title: editingEvent?.title ?? '',
+      description: editingEvent?.description ?? '',
+      date: editingEvent?.date ?? initialDate ?? toLocalDateStr(new Date()),
+      startTime: editingEvent?.startTime ?? '',
+      endTime: editingEvent?.endTime ?? '',
+      type: editingEvent?.type ?? 'consultation',
+      patientName: editingEvent?.patientName ?? '',
+      tutorName: editingEvent?.tutorName ?? '',
+    },
+  });
+
+  const handleSelectPatient = async (option: ComboBoxItem) => {
+    const patient = patients.find((item) => item.id === option.id);
+    if (!patient) return;
+
+    const nextSelection = {
+      id: patient.id,
+      label: patient.name,
+      description: patient.breed,
+      tutorId: patient.tutor_id,
+    };
+
+    setSelectedPatient(nextSelection);
+    setValue('patientName', patient.name, { shouldValidate: true });
+    setPatientSearch('');
+
+    if (patient.tutor_id && !selectedTutor) {
       try {
-        const tutor = await tutorsService.get(tutorId);
-        setSelectedTutor({ id: tutor.id, label: tutor.name, sub: tutor.phone ?? tutor.email ?? undefined });
-      } catch { /* silently */ }
+        const tutor = await tutorsService.get(patient.tutor_id);
+        const tutorOption = {
+          id: tutor.id,
+          label: tutor.name,
+          description: tutor.phone ?? tutor.email,
+        };
+        setSelectedTutor(tutorOption);
+        setValue('tutorName', tutor.name, { shouldValidate: true });
+      } catch {
+        // keep form usable even if tutor auto-fill fails
+      }
     }
-  }
+  };
 
-  function handleClearPatient() {
-    setSelectedPatient(null);
-    setPatientQuery('');
-    setPatientResults([]);
-  }
-
-  function handleSelectTutor(item: ComboBoxItem) {
-    setSelectedTutor(item);
-    setTutorQuery('');
-  }
-
-  function handleClearTutor() {
-    setSelectedTutor(null);
-    setTutorQuery('');
-    setTutorResults([]);
-  }
-
-  function set(field: keyof EventFormState, value: string) {
-    setForm((prev) => ({ ...prev, [field]: value }));
-  }
-
-  function handleDateChange(raw: string) {
-    set('dateDisplay', maskDateInput(raw));
-  }
-
-  function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    if (!form.title.trim()) { setError('O título é obrigatório.'); return; }
-    const internalDate = toInternalDate(form.dateDisplay);
-    if (!internalDate) { setError('Data inválida. Use o formato dd/mm/aaaa.'); return; }
-    if (!form.startTime) { setError('O horário de início é obrigatório.'); return; }
-    setError('');
-
+  const onSubmit = async (data: ScheduleEventFormData) => {
     const payload = {
-      title: form.title.trim(),
-      ...(form.description.trim() ? { description: form.description.trim() } : {}),
-      date: internalDate,
-      startTime: form.startTime,
-      ...(form.endTime ? { endTime: form.endTime } : {}),
-      type: form.type,
-      ...(selectedPatient?.label.trim() ? { patientName: selectedPatient.label.trim() } : {}),
-      ...(selectedTutor?.label.trim() ? { tutorName: selectedTutor.label.trim() } : {}),
+      title: data.title.trim(),
+      ...(data.description?.trim() ? { description: data.description.trim() } : {}),
+      date: data.date,
+      startTime: data.startTime,
+      ...(data.endTime ? { endTime: data.endTime } : {}),
+      type: data.type,
+      patientName: data.patientName.trim(),
+      tutorName: data.tutorName.trim(),
     };
 
     const saved = isEditing
-      ? scheduleService.update(editingEvent.id, payload)
-      : scheduleService.create(payload);
-
+      ? await scheduleService.update(editingEvent.id, payload)
+      : await scheduleService.create(payload);
     onSave(saved);
-  }
+  };
 
-  const inputCls =
-    'w-full rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 px-3 py-2 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500';
   return (
-    <Modal title={isEditing ? 'Editar Evento' : 'Novo Evento'} description="Preencha os dados do agendamento" onClose={onClose} maxWidth="md">
-      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-
-        <div>
-          <Label required className="mb-1.5">Título</Label>
-          <input
-            className={inputCls}
-            placeholder="Ex: Consulta de rotina"
-            value={form.title}
-            onChange={(e) => set('title', e.target.value)}
-          />
-        </div>
-
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <Label required className="mb-1.5">Data</Label>
-            <input
-              className={inputCls}
-              placeholder="dd/mm/aaaa"
-              value={form.dateDisplay}
-              onChange={(e) => handleDateChange(e.target.value)}
-              inputMode="numeric"
-              maxLength={10}
+    <Modal
+      title={isEditing ? 'Editar Evento' : 'Novo Evento'}
+      description='Preencha os dados do agendamento'
+      onClose={onClose}
+      maxWidth='md'
+    >
+      <form onSubmit={handleSubmit(onSubmit)} className='flex flex-col gap-4'>
+        <Controller
+          name='title'
+          control={control}
+          render={({ field }) => (
+            <InputWithLabel
+              label='Título'
+              required
+              placeholder='Ex: Consulta de rotina'
+              value={field.value}
+              onChange={field.onChange}
+              error={errors.title?.message}
             />
-          </div>
-          <div>
-            <Label required className="mb-1.5">Tipo</Label>
-            <SelectInput
-              value={form.type}
-              onChange={(v) => set('type', v as EventType)}
-              options={(Object.keys(EVENT_TYPE_MAP) as EventType[]).map((t) => ({
-                value: t,
-                label: EVENT_TYPE_MAP[t].label,
-              }))}
+          )}
+        />
+
+        <div className='grid grid-cols-2 gap-3'>
+          <Controller
+            name='date'
+            control={control}
+            render={({ field }) => (
+              <InputWithLabel
+                label='Data'
+                required
+                placeholder='aaaa-mm-dd'
+                value={field.value}
+                onChange={field.onChange}
+                error={errors.date?.message}
+              />
+            )}
+          />
+
+          <Controller
+            name='type'
+            control={control}
+            render={({ field }) => (
+              <SelectInput
+                label='Tipo'
+                required
+                value={field.value}
+                onChange={(value) => field.onChange(value as EventType)}
+                options={(Object.keys(EVENT_TYPE_MAP) as EventType[]).map((type) => ({
+                  value: type,
+                  label: EVENT_TYPE_MAP[type].label,
+                }))}
+                error={errors.type?.message}
+              />
+            )}
+          />
+        </div>
+
+        <div className='grid grid-cols-2 gap-3'>
+          <Controller
+            name='startTime'
+            control={control}
+            render={({ field }) => (
+              <TimeInput
+                label='Horário início'
+                required
+                value={field.value}
+                onChange={field.onChange}
+                minHour={minHour}
+                maxHour={maxHour}
+                error={errors.startTime?.message}
+              />
+            )}
+          />
+
+          <Controller
+            name='endTime'
+            control={control}
+            render={({ field }) => (
+              <TimeInput
+                label='Horário fim'
+                value={field.value ?? ''}
+                onChange={field.onChange}
+                minHour={minHour}
+                maxHour={maxHour}
+                error={errors.endTime?.message}
+              />
+            )}
+          />
+        </div>
+
+        <SearchSelect
+          label='Paciente'
+          required
+          placeholder='Buscar paciente...'
+          search={patientSearch}
+          onSearchChange={setPatientSearch}
+          options={patients.map((patient) => ({
+            id: patient.id,
+            label: patient.name,
+            description: patient.breed,
+          }))}
+          loading={patientLoading}
+          open={patientOpen}
+          onOpenChange={setPatientOpen}
+          selectedOption={selectedPatient}
+          onSelect={(option) => {
+            void handleSelectPatient(option);
+          }}
+          onClear={() => {
+            setSelectedPatient(null);
+            setValue('patientName', '', { shouldValidate: true });
+          }}
+          error={errors.patientName?.message}
+          emptyMessage='Nenhum paciente encontrado'
+        />
+
+        <SearchSelect
+          label='Tutor'
+          required
+          placeholder='Buscar tutor...'
+          search={tutorSearch}
+          onSearchChange={setTutorSearch}
+          options={tutors.map((tutor) => ({
+            id: tutor.id,
+            label: tutor.name,
+            description: tutor.phone ?? tutor.email,
+          }))}
+          loading={tutorLoading}
+          open={tutorOpen}
+          onOpenChange={setTutorOpen}
+          selectedOption={selectedTutor}
+          onSelect={(option) => {
+            setSelectedTutor(option);
+            setValue('tutorName', option.label, { shouldValidate: true });
+            setTutorSearch('');
+          }}
+          onClear={() => {
+            setSelectedTutor(null);
+            setValue('tutorName', '', { shouldValidate: true });
+          }}
+          error={errors.tutorName?.message}
+          emptyMessage='Nenhum tutor encontrado'
+        />
+
+        <Controller
+          name='description'
+          control={control}
+          render={({ field }) => (
+            <FormTextarea
+              label='Descrição'
+              rows={3}
+              placeholder='Observações adicionais...'
+              value={field.value ?? ''}
+              onChange={field.onChange}
+              error={errors.description?.message}
             />
-          </div>
-        </div>
-
-        <div className="grid grid-cols-2 gap-3">
-          <TimeInput
-            label="Horário início"
-            required
-            value={form.startTime}
-            onChange={(v) => set('startTime', v)}
-            minHour={minHour}
-            maxHour={maxHour}
-          />
-          <TimeInput
-            label="Horário fim"
-            required
-            value={form.endTime}
-            onChange={(v) => set('endTime', v)}
-            minHour={minHour}
-            maxHour={maxHour}
-          />
-        </div>
-
-        <div>
-          <Label required className="mb-1.5">Paciente</Label>
-          <ComboBox
-            placeholder="Buscar paciente…"
-            icon={<PawPrint size={14} />}
-            value={selectedPatient}
-            inputValue={patientQuery}
-            onInputChange={setPatientQuery}
-            results={patientResults}
-            loading={patientLoading}
-            onSelect={handleSelectPatient}
-            onClear={handleClearPatient}
-            open={patientOpen}
-            onOpenChange={setPatientOpen}
-            inputCls={inputCls}
-          />
-        </div>
-
-        <div>
-          <Label required className="mb-1.5">Tutor</Label>
-          <ComboBox
-            placeholder="Buscar tutor…"
-            icon={<User size={14} />}
-            value={selectedTutor}
-            inputValue={tutorQuery}
-            onInputChange={setTutorQuery}
-            results={tutorResults}
-            loading={tutorLoading}
-            onSelect={handleSelectTutor}
-            onClear={handleClearTutor}
-            open={tutorOpen}
-            onOpenChange={setTutorOpen}
-            inputCls={inputCls}
-          />
-        </div>
-
-        <div>
-          <Label className="mb-1.5">Descrição</Label>
-          <textarea
-            className={`${inputCls} resize-none`}
-            rows={3}
-            placeholder="Observações adicionais…"
-            value={form.description}
-            onChange={(e) => set('description', e.target.value)}
-          />
-        </div>
-
-        {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
-
-        <div className="flex justify-end gap-2 pt-1">
-          <Button type="button" variant="outline" onClick={onClose}>Cancelar</Button>
-          <Button type="submit" className="bg-teal-600 hover:bg-teal-700 text-white border-teal-600">
+          )}
+        />
+        <div className='flex justify-end gap-2 pt-1'>
+          <Button type='button' variant='outline' onClick={onClose}>
+            Cancelar
+          </Button>
+          <Button type='submit' className='border-teal-600 bg-teal-600 text-white hover:bg-teal-700'>
             {isEditing ? 'Salvar alterações' : 'Salvar evento'}
           </Button>
         </div>

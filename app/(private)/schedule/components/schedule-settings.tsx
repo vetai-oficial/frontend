@@ -3,7 +3,7 @@
 import { ChevronDown, Settings2 } from 'lucide-react';
 import { useState } from 'react';
 
-import { SelectInput } from '@/app/components/select-input';
+import { SelectInput } from '@/app/components/forms/select-input';
 
 export interface ScheduleSettingsState {
   weekStartHour: number;
