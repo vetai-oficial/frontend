@@ -41,6 +41,11 @@ export const PERMISSION_CATEGORIES = [
     label: 'Configurações',
     permissions: ['settings:view', 'settings:edit'],
   },
+  {
+    key: 'billing',
+    label: 'Faturamento',
+    permissions: ['billing:view', 'billing:pay'],
+  },
 ] as const;
 
 export const ALL_PERMISSIONS = PERMISSION_CATEGORIES.flatMap(
