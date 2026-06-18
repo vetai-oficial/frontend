@@ -54,7 +54,7 @@ export function useAuthProvider() {
         name,
         email,
         password,
-        invite_token: inviteToken,
+        ...(inviteToken ? { invite_token: inviteToken } : {}),
       });
       setToken(response.access_token);
       localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(response.user));
