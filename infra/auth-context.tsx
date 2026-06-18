@@ -1,15 +1,13 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
 import {
   createContext,
   useCallback,
   useContext,
   useEffect,
-  useMemo,
   useState,
 } from 'react';
-
-import { useRouter } from 'next/navigation';
 
 import { STORAGE_KEYS } from '@/constants';
 import { setToken, removeToken } from '@/infra/http-client';
@@ -51,8 +49,13 @@ export function useAuthProvider() {
   }, [router]);
 
   const register = useCallback(
-    async (name: string, email: string, password: string) => {
-      const response = await authService.register({ name, email, password });
+    async (name: string, email: string, password: string, inviteToken?: string) => {
+      const response = await authService.register({
+        name,
+        email,
+        password,
+        invite_token: inviteToken,
+      });
       setToken(response.access_token);
       localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(response.user));
       setState({ user: response.user, isLoading: false, isAuthenticated: true });
@@ -86,8 +89,6 @@ export function useAuthProvider() {
   return { ...state, login, register, logout, can };
 }
 
-
-
 interface AuthState {
   user: User | null;
   isLoading: boolean;
@@ -96,7 +97,12 @@ interface AuthState {
 
 interface AuthContextType extends AuthState {
   login: (email: string, password: string) => Promise<void>;
-  register: (name: string, email: string, password: string) => Promise<void>;
+  register: (
+    name: string,
+    email: string,
+    password: string,
+    inviteToken?: string,
+  ) => Promise<void>;
   logout: () => void;
   can: (permission: string) => boolean;
 }

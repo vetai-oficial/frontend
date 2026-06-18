@@ -5,10 +5,10 @@ import { Loader2, Plus, X } from 'lucide-react';
 import { useState } from 'react';
 import { Controller, useFieldArray, useForm, type Resolver } from 'react-hook-form';
 
+import { Modal } from '@/app/components/common/modal';
 import { DateInput } from '@/app/components/forms/date-input';
 import { FormTextarea } from '@/app/components/forms/form-textarea';
 import { InputWithLabel } from '@/app/components/forms/input-with-label';
-import { Modal } from '@/app/components/common/modal';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';

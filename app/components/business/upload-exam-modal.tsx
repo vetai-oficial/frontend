@@ -145,10 +145,10 @@ export function UploadExamModal({
               selectedOption={
                 selectedPatient
                   ? {
-                      id: selectedPatient.id,
-                      label: selectedPatient.name,
-                      description: selectedPatient.breed,
-                    }
+                    id: selectedPatient.id,
+                    label: selectedPatient.name,
+                    description: selectedPatient.breed,
+                  }
                   : null
               }
               onSelect={(option) => {

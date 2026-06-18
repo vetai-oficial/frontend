@@ -303,10 +303,10 @@ export function PatientModal({
             selectedOption={
               selectedTutor
                 ? {
-                    id: selectedTutor.id,
-                    label: selectedTutor.name,
-                    description: selectedTutor.email,
-                  }
+                  id: selectedTutor.id,
+                  label: selectedTutor.name,
+                  description: selectedTutor.email,
+                }
                 : null
             }
             onSelect={(option) => {

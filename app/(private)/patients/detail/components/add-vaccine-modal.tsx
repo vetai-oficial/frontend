@@ -1,14 +1,14 @@
 'use client';
 
 import { yupResolver } from '@hookform/resolvers/yup';
-import { Loader2, Search } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { Controller, useForm, type Resolver } from 'react-hook-form';
 
-import { DateInput } from '@/app/components/forms/date-input';
-import { SearchSelect } from '@/app/components/forms/search-select';
-import { InputWithLabel } from '@/app/components/forms/input-with-label';
 import { Modal } from '@/app/components/common/modal';
+import { DateInput } from '@/app/components/forms/date-input';
+import { InputWithLabel } from '@/app/components/forms/input-with-label';
+import { SearchSelect } from '@/app/components/forms/search-select';
 import { SelectInput } from '@/app/components/forms/select-input';
 import { Button } from '@/components/ui/button';
 import { usePaginatedResource } from '@/hooks/use-paginated-resource';
@@ -171,10 +171,10 @@ export function AddVaccineModal({
           onOpenChange={setShowVaccineDropdown}
           selectedOption={selectedVaccine
             ? {
-                id: selectedVaccine.id,
-                label: selectedVaccine.name,
-                description: selectedVaccine.code,
-              }
+              id: selectedVaccine.id,
+              label: selectedVaccine.name,
+              description: selectedVaccine.code,
+            }
             : null}
           onSelect={(option) => {
             const vaccine = catalogVaccines.find((item) => item.id === option.id);
@@ -271,8 +271,8 @@ export function AddVaccineModal({
             <p className="text-sm font-semibold text-teal-900 dark:text-teal-300">
               {calcRevaccinationDate(date, selectedVaccine.revaccination_period_days)
                 ? new Date(
-                    calcRevaccinationDate(date, selectedVaccine.revaccination_period_days),
-                  ).toLocaleDateString('pt-BR')
+                  calcRevaccinationDate(date, selectedVaccine.revaccination_period_days),
+                ).toLocaleDateString('pt-BR')
                 : '—'}
             </p>
             <p className="mt-0.5 text-xs text-teal-600 dark:text-teal-500">

@@ -5,8 +5,8 @@ import { Loader2 } from 'lucide-react';
 import { useState } from 'react';
 import { Controller, useForm, type Resolver } from 'react-hook-form';
 
-import { FormTextarea } from '@/app/components/forms/form-textarea';
 import { Modal } from '@/app/components/common/modal';
+import { FormTextarea } from '@/app/components/forms/form-textarea';
 import { Button } from '@/components/ui/button';
 import {
   patientNoteSchema,

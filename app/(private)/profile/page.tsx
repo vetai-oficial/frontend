@@ -3,9 +3,9 @@
 import { Lock, Shield, User } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
-import { Header } from '@/app/components/layout/header';
-import { InputWithLabel } from '@/app/components/forms/input-with-label';
 import { SectionCard } from '@/app/components/data/section-card';
+import { InputWithLabel } from '@/app/components/forms/input-with-label';
+import { Header } from '@/app/components/layout/header';
 import { Button } from '@/components/ui/button';
 import { STORAGE_KEYS } from '@/constants';
 import type { User as AuthUser } from '@/types/auth';

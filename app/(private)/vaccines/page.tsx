@@ -1,7 +1,7 @@
 'use client';
 
 import { Loader2, Pencil, Plus, Syringe, Trash2 } from 'lucide-react';
-import { useCallback, useEffect, useState } from 'react';
+import { useState } from 'react';
 
 import { VaccineFormModal } from './components/vaccine-form-modal';
 

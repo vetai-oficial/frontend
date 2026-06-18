@@ -4,15 +4,15 @@ import { Loader2, Send, UserPlus } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
-import { DataTable, type DataTableColumn } from '@/app/components/data/data-table';
-import { Header } from '@/app/components/layout/header';
 import { Modal } from '@/app/components/common/modal';
+import { DataTable, type DataTableColumn } from '@/app/components/data/data-table';
 import { SectionCard } from '@/app/components/data/section-card';
+import { Header } from '@/app/components/layout/header';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { useAuth } from '@/infra/auth-context';
 import { collaboratorsService } from '@/services/collaborators.service';
 import { rolesService } from '@/services/roles.service';
-import { useAuth } from '@/infra/auth-context';
 import type { Collaborator, Role } from '@/types/settings';
 
 export default function AdminCollaborators() {

@@ -6,15 +6,15 @@ import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
 import { DataTable, type DataTableColumn } from '@/app/components/data/data-table';
-import { Header } from '@/app/components/layout/header';
 import { SectionCard } from '@/app/components/data/section-card';
+import { Header } from '@/app/components/layout/header';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/infra/auth-context';
 import { rolesService } from '@/services/roles.service';
 import type { Role } from '@/types/settings';
 
 export default function AdminRoles() {
-  const { user, can } = useAuth();
+  const { can } = useAuth();
   const [roles, setRoles] = useState<Role[]>([]);
   const [loading, setLoading] = useState(true);
   const canEdit = can('roles:edit');

@@ -40,11 +40,11 @@ import { AddWeightModal } from './add-weight-modal';
 import { DeleteBtn } from './delete-btn';
 import { InfoCard } from './info-card';
 
+import { PatientModal } from '@/app/components/business/patient-modal';
+import { UploadExamModal } from '@/app/components/business/upload-exam-modal';
 import { Card } from '@/app/components/common/card';
 import { ConfirmModal } from '@/app/components/common/confirm-modal';
-import { PatientModal } from '@/app/components/business/patient-modal';
 import { SectionCard } from '@/app/components/data/section-card';
-import { UploadExamModal } from '@/app/components/business/upload-exam-modal';
 import { Button } from '@/components/ui/button';
 import { SPECIE_LABELS } from '@/constants';
 import { documentsService } from '@/services/documents.service';

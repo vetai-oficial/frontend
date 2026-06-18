@@ -83,8 +83,8 @@ export function RoleForm({ role, mode, onSaved }: RoleFormProps) {
       );
       const next = hasAll
         ? current.filter(
-            (permission) => !categoryPermissions.includes(permission),
-          )
+          (permission) => !categoryPermissions.includes(permission),
+        )
         : Array.from(new Set([...current, ...categoryPermissions]));
       return expandPermissions(next);
     });

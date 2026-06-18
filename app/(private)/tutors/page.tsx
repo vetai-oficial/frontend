@@ -9,13 +9,13 @@ import {
   Trash2,
   User,
 } from 'lucide-react';
-import { useCallback, useEffect, useState } from 'react';
+import { useState } from 'react';
 
 import { TutorModal } from './components/tutor-modal';
 
 import { DataTable } from '@/app/components/data/data-table';
-import { Header } from '@/app/components/layout/header';
 import { SectionCard } from '@/app/components/data/section-card';
+import { Header } from '@/app/components/layout/header';
 import { Button } from '@/components/ui/button';
 import { usePaginatedResource } from '@/hooks/use-paginated-resource';
 import { tutorsService } from '@/services/tutors.service';

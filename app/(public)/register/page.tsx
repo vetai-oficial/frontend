@@ -37,7 +37,7 @@ export default function RegisterPage() {
       const inviteToken = new URLSearchParams(window.location.search).get(
         'invite_token',
       );
-      await register(data.name, data.email, data.password);
+      await register(data.name, data.email, data.password, inviteToken || undefined);
     } finally {
       setLoading(false);
     }

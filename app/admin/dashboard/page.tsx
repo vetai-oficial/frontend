@@ -4,8 +4,8 @@ import { Loader2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 import { DataTable } from '@/app/components/data/data-table';
-import { Header } from '@/app/components/layout/header';
 import { SectionCard } from '@/app/components/data/section-card';
+import { Header } from '@/app/components/layout/header';
 import { MetricCard } from '@/components/MetricCard';
 import { adminService, type AdminDashboardData } from '@/services/admin.service';
 

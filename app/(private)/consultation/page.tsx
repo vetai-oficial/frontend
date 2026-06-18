@@ -21,11 +21,11 @@ import { FinishingOverlay } from './components/finishing-overlay';
 import { TypingEffect } from './components/typing-effect';
 import { TypingIndicator } from './components/typing-indicator';
 
-import { Badge } from '@/app/components/common/badge';
 import { ConsultationHistory } from '@/app/components/business/consultation-history';
 import { DiseaseDetailModal } from '@/app/components/business/disease-detail-modal';
-import { Header } from '@/app/components/layout/header';
+import { Badge } from '@/app/components/common/badge';
 import { SectionCard } from '@/app/components/data/section-card';
+import { Header } from '@/app/components/layout/header';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useConsultation } from '@/hooks/use-consultation';
