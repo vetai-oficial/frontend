@@ -1,6 +1,16 @@
 'use client';
 
-import * as LucideIcons from 'lucide-react';
+import {
+  Users,
+  MailPlus,
+  PawPrint,
+  Microscope,
+  MessagesSquare,
+  ClipboardList,
+  Calendar,
+  Stethoscope,
+  HelpCircle,
+} from 'lucide-react';
 import React from 'react';
 
 import {
@@ -10,8 +20,19 @@ import {
 } from '@/components/ui/tooltip';
 import { cn } from '@/infra/utils';
 
+const iconsMap = {
+  Users,
+  MailPlus,
+  PawPrint,
+  Microscope,
+  MessagesSquare,
+  ClipboardList,
+  Calendar,
+  Stethoscope,
+};
+
 interface MetricCardProps {
-  icon: keyof typeof LucideIcons;
+  icon: keyof typeof iconsMap;
   color: string;
   title: string;
   value: string | number;
@@ -29,7 +50,7 @@ export function MetricCard({
   loading = false,
   className,
 }: MetricCardProps) {
-  const IconComponent = LucideIcons[icon] as React.ElementType;
+  const IconComponent = iconsMap[icon];
 
   return (
     <div
@@ -48,7 +69,7 @@ export function MetricCard({
             {tooltip && (
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <LucideIcons.HelpCircle className='h-3.5 w-3.5 text-muted-foreground/40 hover:text-muted-foreground/60 transition-colors' />
+                  <HelpCircle className='h-3.5 w-3.5 text-muted-foreground/40 hover:text-muted-foreground/60 transition-colors' />
                 </TooltipTrigger>
                 <TooltipContent side='top' align='center'>
                   <p className='max-w-[200px] leading-relaxed'>{tooltip}</p>
