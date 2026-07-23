@@ -112,7 +112,7 @@ All forms **must** follow these conventions:
 
 ### Workflow Rules
 
-- **Final Verification**: Always run `bun run lint` and `bun run build` at the end of any process to ensure code quality and build stability.
+- **Final Verification**: Always run `bun run format`, `bun run lint`, and `bun run build` at the end of any process to ensure code quality and build stability.
 - **No console.log** in production (ESLint rule set to `warn`).
 
 ### General Rules
