@@ -49,16 +49,15 @@ export function useAuthProvider() {
   }, [router]);
 
   const register = useCallback(
-    async (name: string, email: string, password: string, inviteToken?: string) => {
-      const response = await authService.register({
-        name,
-        email,
-        password,
-        ...(inviteToken ? { invite_token: inviteToken } : {}),
-      });
+    async (data: Parameters<typeof authService.register>[0]) => {
+      const response = await authService.register(data);
       setToken(response.access_token);
       localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(response.user));
       setState({ user: response.user, isLoading: false, isAuthenticated: true });
+      if (response.checkout_url) {
+        window.location.assign(response.checkout_url);
+        return;
+      }
       router.push('/analytics/dashboard');
     },
     [router],
@@ -97,12 +96,7 @@ interface AuthState {
 
 interface AuthContextType extends AuthState {
   login: (email: string, password: string) => Promise<void>;
-  register: (
-    name: string,
-    email: string,
-    password: string,
-    inviteToken?: string,
-  ) => Promise<void>;
+  register: (data: Parameters<typeof authService.register>[0]) => Promise<void>;
   logout: () => void;
   can: (permission: string) => boolean;
 }

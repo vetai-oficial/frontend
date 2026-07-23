@@ -14,6 +14,7 @@ export interface AuthResponse {
   refresh_token: string;
   user: User;
   message?: string;
+  checkout_url?: string | null;
 }
 
 export interface RefreshResponse {
@@ -32,6 +33,22 @@ export interface RegisterPayload {
   email: string;
   password: string;
   invite_token?: string;
+  plan_id?: string;
+  hospital_name?: string;
+  cnpj?: string;
+  address?: {
+    zip_code: string;
+    street: string;
+    number: string;
+    complement?: string;
+    neighborhood: string;
+    city: string;
+    state: string;
+  };
+  responsible?: {
+    name: string;
+    crmv: string;
+  };
 }
 
 export interface AuthTokens {

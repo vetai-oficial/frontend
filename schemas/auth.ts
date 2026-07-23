@@ -7,7 +7,9 @@ export const loginSchema = yup.object({
   email: yup
     .string()
     .required('Email é obrigatório')
-    .test('valid-email', 'Email inválido', (value) => validateEmail(value ?? '')),
+    .test('valid-email', 'Email inválido', (value) =>
+      validateEmail(value ?? ''),
+    ),
   password: yup.string().required('Senha é obrigatória'),
 });
 
@@ -16,7 +18,9 @@ export const registerSchema = yup.object({
   email: yup
     .string()
     .required('Email é obrigatório')
-    .test('valid-email', 'Email inválido', (value) => validateEmail(value ?? '')),
+    .test('valid-email', 'Email inválido', (value) =>
+      validateEmail(value ?? ''),
+    ),
   password: yup
     .string()
     .required('Senha é obrigatória')
@@ -30,13 +34,31 @@ export const registerSchema = yup.object({
     .string()
     .required('Confirmação de senha é obrigatória')
     .oneOf([yup.ref('password')], 'Senhas não conferem'),
+  planId: yup.string().optional(),
+  hospitalName: yup.string().optional(),
+  cnpj: yup.string().optional(),
+  address: yup.object({
+    zipCode: yup.string().optional(),
+    street: yup.string().optional(),
+    number: yup.string().optional(),
+    complement: yup.string().optional(),
+    neighborhood: yup.string().optional(),
+    city: yup.string().optional(),
+    state: yup.string().optional(),
+  }),
+  responsible: yup.object({
+    name: yup.string().optional(),
+    crmv: yup.string().optional(),
+  }),
 });
 
 export const forgotPasswordSchema = yup.object({
   email: yup
     .string()
     .required('Email é obrigatório')
-    .test('valid-email', 'Email inválido', (value) => validateEmail(value ?? '')),
+    .test('valid-email', 'Email inválido', (value) =>
+      validateEmail(value ?? ''),
+    ),
 });
 
 export type LoginFormData = yup.InferType<typeof loginSchema>;
