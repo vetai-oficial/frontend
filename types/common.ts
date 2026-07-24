@@ -19,3 +19,6 @@ export interface QueryParams {
   direction?: 'asc' | 'desc' | undefined;
   search?: string | undefined;
 }
+
+export type PaginatedQueryParams<TFilters extends object = Record<string, never>> =
+  QueryParams & TFilters;

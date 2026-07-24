@@ -13,7 +13,7 @@ import {
 } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 
-import { Badge } from '@/app/components/badge';
+import { Badge } from '@/app/components/common/badge';
 import { consultationsService } from '@/services/consultations.service';
 import type { Consultation } from '@/types/consultation';
 import { normalizeProb } from '@/utils/date-format';

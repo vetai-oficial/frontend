@@ -23,10 +23,16 @@ function getToken(): string | null {
 
 export function setToken(token: string): void {
   localStorage.setItem(STORAGE_KEYS.TOKEN, token);
+  if (typeof document !== 'undefined') {
+    document.cookie = `${STORAGE_KEYS.TOKEN}=${token}; path=/; max-age=${60 * 60 * 24 * 7}`;
+  }
 }
 
 export function removeToken(): void {
   localStorage.removeItem(STORAGE_KEYS.TOKEN);
+  if (typeof document !== 'undefined') {
+    document.cookie = `${STORAGE_KEYS.TOKEN}=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT`;
+  }
 }
 
 export interface HttpClientOptions extends RequestInit {

@@ -3,6 +3,8 @@
 import { Check, ChevronDown } from 'lucide-react';
 import * as React from 'react';
 import { createPortal } from 'react-dom';
+import type { Control } from 'react-hook-form';
+import { Controller } from 'react-hook-form';
 
 import { cn } from '@/infra/utils';
 
@@ -12,8 +14,8 @@ export interface SelectOption {
 }
 
 export interface SelectInputProps {
-  value: string;
-  onChange: (value: string) => void;
+  value?: string;
+  onChange?: (value: string) => void;
   options: SelectOption[];
   placeholder?: string;
   label?: string;
@@ -23,8 +25,9 @@ export interface SelectInputProps {
   disabled?: boolean;
   required?: boolean;
   id?: string;
-  /** compact mode: smaller height/text (for use in tight spaces) */
   compact?: boolean;
+  control?: Control<any>;
+  name?: string;
 }
 
 interface DropdownProps {
@@ -36,11 +39,19 @@ interface DropdownProps {
   dropdownRef: React.RefObject<HTMLDivElement | null>;
 }
 
-function Dropdown({ options, value, onSelect, onClose, anchorRect, dropdownRef }: DropdownProps) {
+function Dropdown({
+  options,
+  value,
+  onSelect,
+  onClose,
+  anchorRect,
+  dropdownRef,
+}: DropdownProps) {
   const MAX_HEIGHT = 260;
   const GAP = 4;
   const spaceBelow = window.innerHeight - anchorRect.bottom;
-  const openUpward = spaceBelow < MAX_HEIGHT + GAP && anchorRect.top > MAX_HEIGHT + GAP;
+  const openUpward =
+    spaceBelow < MAX_HEIGHT + GAP && anchorRect.top > MAX_HEIGHT + GAP;
 
   const style: React.CSSProperties = {
     position: 'fixed',
@@ -56,17 +67,23 @@ function Dropdown({ options, value, onSelect, onClose, anchorRect, dropdownRef }
     <div
       ref={dropdownRef}
       style={style}
-      onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); }}
-      className="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-xl shadow-slate-200/60 dark:shadow-slate-900/60 py-1.5 animate-in fade-in-0 zoom-in-95 duration-150 overflow-hidden"
+      onMouseDown={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+      }}
+      className='rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-xl shadow-slate-200/60 dark:shadow-slate-900/60 py-1.5 animate-in fade-in-0 zoom-in-95 duration-150 overflow-hidden'
     >
-      <div className="overflow-y-auto" style={{ maxHeight: MAX_HEIGHT }}>
+      <div className='overflow-y-auto' style={{ maxHeight: MAX_HEIGHT }}>
         {options.map((opt) => {
           const isSelected = opt.value === value;
           return (
             <button
               key={opt.value}
-              type="button"
-              onClick={() => { onSelect(opt.value); onClose(); }}
+              type='button'
+              onClick={() => {
+                onSelect(opt.value);
+                onClose();
+              }}
               className={cn(
                 'w-full flex items-center justify-between gap-2 px-3 py-2 text-sm text-left transition-colors',
                 isSelected
@@ -75,7 +92,9 @@ function Dropdown({ options, value, onSelect, onClose, anchorRect, dropdownRef }
               )}
             >
               <span>{opt.label}</span>
-              {isSelected && <Check size={14} className="shrink-0 text-teal-500" />}
+              {isSelected && (
+                <Check size={14} className='shrink-0 text-teal-500' />
+              )}
             </button>
           );
         })}
@@ -84,7 +103,7 @@ function Dropdown({ options, value, onSelect, onClose, anchorRect, dropdownRef }
   );
 }
 
-export function SelectInput({
+function SelectInputInner({
   value,
   onChange,
   options,
@@ -97,20 +116,27 @@ export function SelectInput({
   required,
   id,
   compact = false,
-}: SelectInputProps) {
+}: Omit<SelectInputProps, 'control' | 'name'> & {
+  value: string;
+  onChange: (value: string) => void;
+}) {
   const [anchorRect, setAnchorRect] = React.useState<DOMRect | null>(null);
   const [mounted, setMounted] = React.useState(false);
   const triggerRef = React.useRef<HTMLDivElement>(null);
   const dropdownRef = React.useRef<HTMLDivElement>(null);
 
-  React.useEffect(() => { setMounted(true); }, []);
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
 
-  // Close on outside click or scroll
   React.useEffect(() => {
     if (!anchorRect) return;
     const close = (e: MouseEvent) => {
       const node = e.target as Node;
-      if (!triggerRef.current?.contains(node) && !dropdownRef.current?.contains(node)) {
+      if (
+        !triggerRef.current?.contains(node) &&
+        !dropdownRef.current?.contains(node)
+      ) {
         setAnchorRect(null);
       }
     };
@@ -128,7 +154,10 @@ export function SelectInput({
 
   const toggle = () => {
     if (disabled) return;
-    if (anchorRect) { setAnchorRect(null); return; }
+    if (anchorRect) {
+      setAnchorRect(null);
+      return;
+    }
     const rect = triggerRef.current?.getBoundingClientRect();
     if (rect) setAnchorRect(rect);
   };
@@ -142,22 +171,27 @@ export function SelectInput({
       {label && (
         <label
           htmlFor={inputId}
-          className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5 block"
+          className='text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5 block'
         >
           {label}
-          {required && <span className="text-red-500 ml-0.5">*</span>}
+          {required && <span className='text-red-500 ml-0.5'>*</span>}
         </label>
       )}
 
       <div
         id={inputId}
         ref={triggerRef}
-        role="combobox"
+        role='combobox'
         aria-expanded={open}
-        aria-haspopup="listbox"
+        aria-haspopup='listbox'
         tabIndex={disabled ? -1 : 0}
         onClick={toggle}
-        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(); } }}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            toggle();
+          }
+        }}
         className={cn(
           'w-full flex items-center justify-between gap-2 border rounded-lg bg-white dark:bg-slate-700 cursor-pointer select-none transition-colors',
           compact ? 'px-2 py-1 text-xs' : 'px-3 py-2.5 text-sm',
@@ -170,7 +204,11 @@ export function SelectInput({
           className,
         )}
       >
-        <span className={cn(selectedLabel ? 'text-slate-900 dark:text-white' : 'text-slate-400')}>
+        <span
+          className={cn(
+            selectedLabel ? 'text-slate-900 dark:text-white' : 'text-slate-400',
+          )}
+        >
           {selectedLabel ?? placeholder}
         </span>
         <ChevronDown
@@ -183,20 +221,59 @@ export function SelectInput({
       </div>
 
       {error && (
-        <p className="text-xs text-red-500 dark:text-red-400 mt-1">{error}</p>
+        <p className='text-xs text-red-500 dark:text-red-400 mt-1'>{error}</p>
       )}
 
-      {mounted && open && anchorRect && createPortal(
-        <Dropdown
-          options={options}
-          value={value}
-          onSelect={onChange}
-          onClose={() => setAnchorRect(null)}
-          anchorRect={anchorRect}
-          dropdownRef={dropdownRef}
-        />,
-        document.body,
-      )}
+      {mounted &&
+        open &&
+        anchorRect &&
+        createPortal(
+          <Dropdown
+            options={options}
+            value={value}
+            onSelect={onChange}
+            onClose={() => setAnchorRect(null)}
+            anchorRect={anchorRect}
+            dropdownRef={dropdownRef}
+          />,
+          document.body,
+        )}
     </div>
+  );
+}
+
+export function SelectInput({
+  value,
+  onChange,
+  control,
+  name,
+  ...rest
+}: SelectInputProps) {
+  if (control && name) {
+    return (
+      <Controller
+        name={name}
+        control={control}
+        render={({
+          field,
+        }: {
+          field: { value: string; onChange: (value: string) => void };
+        }) => (
+          <SelectInputInner
+            value={field.value}
+            onChange={field.onChange}
+            {...rest}
+          />
+        )}
+      />
+    );
+  }
+
+  return (
+    <SelectInputInner
+      value={value ?? ''}
+      onChange={onChange ?? (() => {})}
+      {...rest}
+    />
   );
 }

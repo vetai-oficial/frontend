@@ -3,7 +3,7 @@
 import { Activity, Microscope, PawPrint, Stethoscope, Users } from 'lucide-react';
 import Link from 'next/link';
 
-import { Counter } from '@/app/components/counter';
+import { Counter } from '@/app/components/common/counter';
 
 interface StatItem {
   icon: React.ElementType;

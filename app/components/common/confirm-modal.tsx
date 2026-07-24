@@ -1,7 +1,5 @@
 'use client';
 
-import { Loader2 } from 'lucide-react';
-
 import { Modal } from './modal';
 
 import { Button } from '@/components/ui/button';
@@ -28,22 +26,24 @@ export function ConfirmModal({
   onClose,
 }: ConfirmModalProps) {
   return (
-    <Modal title={title} onClose={onClose} maxWidth="sm">
-      <p className="text-sm text-slate-600 dark:text-slate-300 mb-6">{description}</p>
-      <div className="flex gap-3 justify-end">
-        <Button variant="outline" onClick={onClose} disabled={loading}>
+    <Modal title={title} onClose={onClose} maxWidth='sm'>
+      <p className='text-sm text-slate-600 dark:text-slate-300 mb-6'>
+        {description}
+      </p>
+      <div className='flex gap-3 justify-end'>
+        <Button variant='outline' onClick={onClose} disabled={loading}>
           {cancelLabel}
         </Button>
         <Button
           onClick={onConfirm}
-          disabled={loading}
+          loading={loading}
           className={
             variant === 'danger'
               ? 'bg-red-600 text-white hover:bg-red-700'
               : 'bg-teal-600 text-white hover:bg-teal-700'
           }
         >
-          {loading ? <Loader2 size={16} className="animate-spin" /> : confirmLabel}
+          {confirmLabel}
         </Button>
       </div>
     </Modal>

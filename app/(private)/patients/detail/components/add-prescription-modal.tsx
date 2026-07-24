@@ -1,20 +1,22 @@
 'use client';
 
+import { yupResolver } from '@hookform/resolvers/yup';
 import { Loader2, Plus, X } from 'lucide-react';
 import { useState } from 'react';
+import { Controller, useFieldArray, useForm, type Resolver } from 'react-hook-form';
 
-import { DateInput } from '@/app/components/date-input';
-import { Modal } from '@/app/components/modal';
+import { Modal } from '@/app/components/common/modal';
+import { DateInput } from '@/app/components/forms/date-input';
+import { FormTextarea } from '@/app/components/forms/form-textarea';
+import { InputWithLabel } from '@/app/components/forms/input-with-label';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
+import {
+  prescriptionSchema,
+  type PrescriptionFormData,
+} from '@/schemas/health-record';
 import { healthRecordsService } from '@/services/health-records.service';
-
-interface MedicationRow {
-  drug: string;
-  form: string;
-  quantity: string;
-  posology: string;
-}
 
 interface AddPrescriptionModalProps {
   patientId: string;
@@ -23,66 +25,79 @@ interface AddPrescriptionModalProps {
 }
 
 export function AddPrescriptionModal({ patientId, onClose, onSuccess }: AddPrescriptionModalProps) {
-  const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
-  const [includeDate, setIncludeDate] = useState(true);
-  const [medications, setMedications] = useState<MedicationRow[]>([
-    { drug: '', form: '', quantity: '', posology: '' },
-  ]);
   const [saving, setSaving] = useState(false);
-  const [error, setError] = useState('');
 
-  const addMedication = () =>
-    setMedications((prev) => [...prev, { drug: '', form: '', quantity: '', posology: '' }]);
+  const {
+    control,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<PrescriptionFormData>({
+    resolver: yupResolver(prescriptionSchema) as Resolver<PrescriptionFormData>,
+    defaultValues: {
+      date: new Date().toISOString().slice(0, 10),
+      includeDate: true,
+      medications: [{ drug: '', form: '', quantity: '', posology: '' }],
+    },
+  });
 
-  const removeMedication = (i: number) =>
-    setMedications((prev) => prev.filter((_, idx) => idx !== i));
+  const { fields, append, remove } = useFieldArray({
+    control,
+    name: 'medications',
+  });
 
-  const updateMedication = (i: number, field: keyof MedicationRow, value: string) =>
-    setMedications((prev) => prev.map((m, idx) => idx === i ? { ...m, [field]: value } : m));
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const filled = medications.filter((m) => m.drug.trim() && m.posology.trim());
-    if (filled.length === 0) { setError('Adicione ao menos um medicamento com nome e posologia.'); return; }
-    if (!date) { setError('Informe a data da receita.'); return; }
-    setError('');
+  const onSubmit = async (data: PrescriptionFormData) => {
     setSaving(true);
     try {
       await healthRecordsService.create(patientId, {
         type: 'PRESCRIPTION',
-        date: new Date(date).toISOString(),
+        date: new Date(data.date).toISOString(),
         metadata: {
-          include_date: includeDate,
-          medications: filled.map((m) => ({
-            drug: m.drug.trim(),
-            form: m.form.trim() || undefined,
-            quantity: m.quantity.trim() || undefined,
-            posology: m.posology.trim(),
+          include_date: data.includeDate,
+          medications: data.medications.map((medication) => ({
+            drug: medication.drug.trim(),
+            form: medication.form?.trim() || undefined,
+            quantity: medication.quantity?.trim() || undefined,
+            posology: medication.posology.trim(),
           })),
         },
       });
       onSuccess();
-    } catch { setError('Erro ao salvar. Tente novamente.'); } finally { setSaving(false); }
+    } finally {
+      setSaving(false);
+    }
   };
-
-  const inputCls = 'mt-1.5 w-full rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 px-3 py-2 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500';
 
   return (
     <Modal title="Nova Receita" description="Adicione medicamentos e posologia" onClose={onClose} maxWidth="lg">
-      <form onSubmit={(e) => { void handleSubmit(e); }} className="space-y-5">
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
         <div className="flex items-end gap-4">
           <div className="flex-1">
-            <DateInput label="Data da receita" value={date} onChange={setDate} required />
-          </div>
-          <label className="flex items-center gap-2 pb-2.5 cursor-pointer select-none">
-            <input
-              type="checkbox"
-              checked={includeDate}
-              onChange={(e) => setIncludeDate(e.target.checked)}
-              className="w-4 h-4 rounded border-slate-300 text-teal-600 focus:ring-teal-500 accent-teal-600"
+            <Controller
+              name="date"
+              control={control}
+              render={({ field }) => (
+                <DateInput
+                  label="Data da receita"
+                  value={field.value}
+                  onChange={field.onChange}
+                  required
+                  error={errors.date?.message}
+                />
+              )}
             />
-            <span className="text-sm text-slate-700 dark:text-slate-300">Incluir data na receita</span>
-          </label>
+          </div>
+          <Controller
+            name="includeDate"
+            control={control}
+            render={({ field }) => (
+              <Checkbox
+                checked={field.value}
+                onChange={(e) => field.onChange(e.target.checked)}
+                label="Incluir data na receita"
+                className="accent-teal-600"
+              />
+            )}
+          />
         </div>
 
         <div className="space-y-3">
@@ -92,26 +107,26 @@ export function AddPrescriptionModal({ patientId, onClose, onSuccess }: AddPresc
               type="button"
               variant="ghost"
               size="sm"
-              onClick={addMedication}
-              className="gap-1.5 text-xs text-teal-600 dark:text-teal-400 hover:text-teal-700 hover:bg-teal-50 dark:hover:text-teal-300 dark:hover:bg-teal-900/20"
+              onClick={() => append({ drug: '', form: '', quantity: '', posology: '' })}
+              className="gap-1.5 text-xs text-teal-600 hover:bg-teal-50 hover:text-teal-700 dark:text-teal-400 dark:hover:bg-teal-900/20 dark:hover:text-teal-300"
             >
               <Plus size={14} /> Adicionar medicamento
             </Button>
           </div>
 
-          {medications.map((med, i) => (
-            <div key={i} className="border border-slate-200 dark:border-slate-600 rounded-lg p-4 space-y-3 bg-slate-50/50 dark:bg-slate-700/30">
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
-                  Medicamento {i + 1}
+          {fields.map((field, index) => (
+            <div key={field.id} className="space-y-3 rounded-lg border border-slate-200 bg-slate-50/50 p-4 dark:border-slate-600 dark:bg-slate-700/30">
+              <div className="mb-1 flex items-center justify-between">
+                <span className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                  Medicamento {index + 1}
                 </span>
-                {medications.length > 1 && (
+                {fields.length > 1 && (
                   <Button
                     type="button"
                     variant="ghost"
                     size="icon-sm"
-                    onClick={() => removeMedication(i)}
-                    className="text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20"
+                    onClick={() => remove(index)}
+                    className="text-slate-400 hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-900/20"
                   >
                     <X size={14} />
                   </Button>
@@ -119,40 +134,70 @@ export function AddPrescriptionModal({ patientId, onClose, onSuccess }: AddPresc
               </div>
 
               <div className="grid grid-cols-3 gap-3">
-                <div className="col-span-1">
-                  <Label htmlFor={`drug-${i}`}>Medicamento <span className="text-red-500">*</span></Label>
-                  <input id={`drug-${i}`} value={med.drug} onChange={(e) => updateMedication(i, 'drug', e.target.value)} placeholder="Ex: Amoxicilina" className={inputCls} required />
-                </div>
-                <div>
-                  <Label htmlFor={`form-${i}`} required>Forma</Label>
-                  <input id={`form-${i}`} value={med.form} onChange={(e) => updateMedication(i, 'form', e.target.value)} placeholder="Ex: Comprimido" className={inputCls} />
-                </div>
-                <div>
-                  <Label htmlFor={`qty-${i}`} required>Quantidade</Label>
-                  <input id={`qty-${i}`} value={med.quantity} onChange={(e) => updateMedication(i, 'quantity', e.target.value)} placeholder="Ex: 500mg" className={inputCls} required />
-                </div>
-              </div>
-
-              <div>
-                <Label htmlFor={`pos-${i}`}>Posologia <span className="text-red-500">*</span></Label>
-                <textarea
-                  id={`pos-${i}`}
-                  value={med.posology}
-                  onChange={(e) => updateMedication(i, 'posology', e.target.value)}
-                  placeholder="Ex: 1 comprimido a cada 8 horas por 7 dias"
-                  rows={2}
-                  required
-                  className={`${inputCls} resize-none`}
+                <Controller
+                  name={`medications.${index}.drug`}
+                  control={control}
+                  render={({ field: medicationField }) => (
+                    <InputWithLabel
+                      label="Medicamento"
+                      required
+                      placeholder="Ex: Amoxicilina"
+                      value={medicationField.value}
+                      onChange={medicationField.onChange}
+                      error={errors.medications?.[index]?.drug?.message}
+                    />
+                  )}
+                />
+                <Controller
+                  name={`medications.${index}.form`}
+                  control={control}
+                  render={({ field: medicationField }) => (
+                    <InputWithLabel
+                      label="Forma"
+                      placeholder="Ex: Comprimido"
+                      value={medicationField.value ?? ''}
+                      onChange={medicationField.onChange}
+                      error={errors.medications?.[index]?.form?.message}
+                    />
+                  )}
+                />
+                <Controller
+                  name={`medications.${index}.quantity`}
+                  control={control}
+                  render={({ field: medicationField }) => (
+                    <InputWithLabel
+                      label="Quantidade"
+                      placeholder="Ex: 500mg"
+                      value={medicationField.value ?? ''}
+                      onChange={medicationField.onChange}
+                      error={errors.medications?.[index]?.quantity?.message}
+                    />
+                  )}
                 />
               </div>
+
+              <Controller
+                name={`medications.${index}.posology`}
+                control={control}
+                render={({ field: medicationField }) => (
+                  <FormTextarea
+                    label="Posologia"
+                    required
+                    rows={2}
+                    placeholder="Ex: 1 comprimido a cada 8 horas por 7 dias"
+                    value={medicationField.value}
+                    onChange={medicationField.onChange}
+                    error={errors.medications?.[index]?.posology?.message}
+                  />
+                )}
+              />
             </div>
           ))}
         </div>
-
-        {error && <p className="text-sm text-red-500 dark:text-red-400">{error}</p>}
-
-        <div className="flex gap-3 justify-end pt-2">
-          <Button type="button" variant="outline" onClick={onClose} disabled={saving}>Cancelar</Button>
+        <div className="flex justify-end gap-3 pt-2">
+          <Button type="button" variant="outline" onClick={onClose} disabled={saving}>
+            Cancelar
+          </Button>
           <Button type="submit" disabled={saving} className="bg-teal-600 text-white hover:bg-teal-700">
             {saving ? <Loader2 size={16} className="animate-spin" /> : 'Salvar Receita'}
           </Button>

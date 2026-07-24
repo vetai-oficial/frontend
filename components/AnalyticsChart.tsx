@@ -17,7 +17,7 @@ import {
 import { Loader2 } from 'lucide-react';
 import { Bar, Doughnut, Line } from 'react-chartjs-2';
 
-import { SectionCard } from '@/app/components/section-card';
+import { SectionCard } from '@/app/components/data/section-card';
 
 ChartJS.register(
   CategoryScale,

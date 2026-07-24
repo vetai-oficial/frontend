@@ -1,11 +1,17 @@
 'use client';
 
+import { yupResolver } from '@hookform/resolvers/yup';
 import { Loader2 } from 'lucide-react';
 import { useState } from 'react';
+import { Controller, useForm, type Resolver } from 'react-hook-form';
 
-import { Modal } from '@/app/components/modal';
+import { Modal } from '@/app/components/common/modal';
+import { FormTextarea } from '@/app/components/forms/form-textarea';
 import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
+import {
+  patientNoteSchema,
+  type PatientNoteFormData,
+} from '@/schemas/health-record';
 import { healthRecordsService } from '@/services/health-records.service';
 
 interface AddNoteModalProps {
@@ -15,41 +21,57 @@ interface AddNoteModalProps {
 }
 
 export function AddNoteModal({ patientId, onClose, onSuccess }: AddNoteModalProps) {
-  const [text, setText] = useState('');
   const [saving, setSaving] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!text) return;
+  const {
+    control,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<PatientNoteFormData>({
+    resolver: yupResolver(patientNoteSchema) as Resolver<PatientNoteFormData>,
+    defaultValues: {
+      text: '',
+    },
+  });
+
+  const onSubmit = async (data: PatientNoteFormData) => {
     setSaving(true);
     try {
       await healthRecordsService.create(patientId, {
         type: 'NOTE',
         date: new Date().toISOString(),
-        metadata: { text },
+        metadata: { text: data.text.trim() },
       });
       onSuccess();
-    } catch { /* silently fail */ } finally { setSaving(false); }
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
     <Modal title="Nova Nota" onClose={onClose} maxWidth="sm">
-      <form onSubmit={(e) => { void handleSubmit(e); }} className="space-y-4">
-        <div>
-          <Label htmlFor="note-text">Nota / Observação <span className="text-red-500">*</span></Label>
-          <textarea
-            id="note-text"
-            placeholder="Escreva uma observação sobre o paciente..."
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-            rows={5}
-            required
-            autoFocus
-            className="mt-1.5 w-full rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 px-3 py-2 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500 resize-none"
-          />
-        </div>
-        <div className="flex gap-3 justify-end pt-2">
-          <Button type="button" variant="outline" onClick={onClose} disabled={saving}>Cancelar</Button>
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+        <Controller
+          name="text"
+          control={control}
+          render={({ field }) => (
+            <FormTextarea
+              label="Nota / Observação"
+              required
+              rows={5}
+              placeholder="Escreva uma observação sobre o paciente..."
+              value={field.value}
+              onChange={field.onChange}
+              error={errors.text?.message}
+              autoFocus
+            />
+          )}
+        />
+
+        <div className="flex justify-end gap-3 pt-2">
+          <Button type="button" variant="outline" onClick={onClose} disabled={saving}>
+            Cancelar
+          </Button>
           <Button type="submit" disabled={saving} className="bg-teal-600 text-white hover:bg-teal-700">
             {saving ? <Loader2 size={16} className="animate-spin" /> : 'Salvar'}
           </Button>

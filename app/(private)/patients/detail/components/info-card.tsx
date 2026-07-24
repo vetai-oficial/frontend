@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 
-import { Card } from '@/app/components/card';
+import { Card } from '@/app/components/common/card';
 
 interface InfoCardProps {
   icon: ReactNode;

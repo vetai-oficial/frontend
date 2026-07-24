@@ -4,10 +4,10 @@ import { ChevronRight, Loader2, PawPrint, Plus } from 'lucide-react';
 import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
 
-import { DataTable } from '@/app/components/data-table';
-import { Header } from '@/app/components/header';
-import { PatientModal } from '@/app/components/patient-modal';
-import { SectionCard } from '@/app/components/section-card';
+import { PatientModal } from '@/app/components/business/patient-modal';
+import { DataTable } from '@/app/components/data/data-table';
+import { SectionCard } from '@/app/components/data/section-card';
+import { Header } from '@/app/components/layout/header';
 import { Button } from '@/components/ui/button';
 import { SPECIE_LABELS } from '@/constants';
 import { patientsService } from '@/services/patients.service';

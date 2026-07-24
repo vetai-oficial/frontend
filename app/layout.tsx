@@ -1,7 +1,10 @@
 import type { Metadata } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
+import { Toaster } from 'sonner';
 
 import '@/app/globals.css';
+import { ThemeProvider } from '@/contexts/theme-context';
+import { AuthProvider } from '@/infra/auth-context';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -15,20 +18,25 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: 'VetAI - Veterinary AI Assistant',
-  description: 'Plataforma veterinária com inteligência artificial para diagnósticos, análise de exames e monitoramento de pacientes.',
+  description:
+    'Plataforma veterinária com inteligência artificial para diagnósticos, análise de exames e monitoramento de pacientes.',
 };
 
-export default function PublicLayout({
+export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="pt-br" suppressHydrationWarning>
+    <html lang='pt-br' suppressHydrationWarning>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        suppressHydrationWarning
       >
-        {children}
+        <ThemeProvider>
+          <AuthProvider>{children}</AuthProvider>
+        </ThemeProvider>
+        <Toaster position='top-right' richColors />
       </body>
     </html>
   );

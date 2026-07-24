@@ -4,11 +4,11 @@ import { Eye, Loader2, Microscope, UploadIcon } from 'lucide-react';
 import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
 
-import { Badge } from '@/app/components/badge';
-import { DataTable } from '@/app/components/data-table';
-import { Header } from '@/app/components/header';
-import { SectionCard } from '@/app/components/section-card';
-import { UploadExamModal } from '@/app/components/upload-exam-modal';
+import { UploadExamModal } from '@/app/components/business/upload-exam-modal';
+import { Badge } from '@/app/components/common/badge';
+import { DataTable } from '@/app/components/data/data-table';
+import { SectionCard } from '@/app/components/data/section-card';
+import { Header } from '@/app/components/layout/header';
 import { Button } from '@/components/ui/button';
 import { STUDY_STATUS_MAP } from '@/constants';
 import { studiesService } from '@/services/studies.service';

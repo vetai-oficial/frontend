@@ -2,25 +2,25 @@
 
 import * as React from 'react';
 import { createPortal } from 'react-dom';
+import { Controller, type Control, type FieldValues } from 'react-hook-form';
 
 import { cn } from '@/infra/utils';
 
 export interface TimeInputProps {
-  value: string; // HH:MM or ''
-  onChange: (value: string) => void;
+  value?: string;
+  onChange?: (value: string) => void;
   label?: string;
+  error?: string | undefined;
   required?: boolean;
   disabled?: boolean;
-  minHour?: number; // inclusive, 0–23
-  maxHour?: number; // inclusive, 0–23
+  minHour?: number;
+  maxHour?: number;
   className?: string;
   containerClassName?: string;
   id?: string;
+  control?: Control<FieldValues>;
+  name?: string;
 }
-
-// ──────────────────────────────────────────────
-// Helpers
-// ──────────────────────────────────────────────
 
 function splitTime(value: string): { h: number | null; m: number | null } {
   const match = value.match(/^(\d{2}):(\d{2})$/);
@@ -37,10 +37,6 @@ const MINUTES = Array.from({ length: 60 }, (_, i) => i);
 const DROPDOWN_HEIGHT = 220;
 const GAP = 4;
 
-// ──────────────────────────────────────────────
-// Scrollable dropdown for a single column
-// ──────────────────────────────────────────────
-
 interface PartDropdownProps {
   items: number[];
   selected: number | null;
@@ -51,19 +47,28 @@ interface PartDropdownProps {
   header: string;
 }
 
-function PartDropdown({ items, selected, onSelect, onClose, anchorRect, dropdownRef, header }: PartDropdownProps) {
+function PartDropdown({
+  items,
+  selected,
+  onSelect,
+  onClose,
+  anchorRect,
+  dropdownRef,
+  header,
+}: PartDropdownProps) {
   const listRef = React.useRef<HTMLDivElement>(null);
 
-  // Scroll selected item into view on open
   React.useEffect(() => {
     if (selected === null || !listRef.current) return;
     const item = listRef.current.children[selected] as HTMLElement | undefined;
     item?.scrollIntoView({ block: 'center' });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const spaceBelow = window.innerHeight - anchorRect.bottom;
-  const openUpward = spaceBelow < DROPDOWN_HEIGHT + GAP && anchorRect.top > DROPDOWN_HEIGHT + GAP;
+  const openUpward =
+    spaceBelow < DROPDOWN_HEIGHT + GAP &&
+    anchorRect.top > DROPDOWN_HEIGHT + GAP;
 
   const style: React.CSSProperties = {
     position: 'fixed',
@@ -79,19 +84,24 @@ function PartDropdown({ items, selected, onSelect, onClose, anchorRect, dropdown
     <div
       ref={dropdownRef}
       style={style}
-      // Prevent focus stealing and stop propagation so the outside-click handler doesn't fire
-      onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); }}
-      className="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-xl shadow-slate-200/60 dark:shadow-slate-900/60 overflow-hidden animate-in fade-in-0 zoom-in-95 duration-150"
+      onMouseDown={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+      }}
+      className='rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-xl shadow-slate-200/60 dark:shadow-slate-900/60 overflow-hidden animate-in fade-in-0 zoom-in-95 duration-150'
     >
-      <div className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wide text-center py-1.5 border-b border-slate-100 dark:border-slate-700 select-none">
+      <div className='text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wide text-center py-1.5 border-b border-slate-100 dark:border-slate-700 select-none'>
         {header}
       </div>
-      <div ref={listRef} className="h-[184px] overflow-y-auto py-1">
+      <div ref={listRef} className='h-[184px] overflow-y-auto py-1'>
         {items.map((n) => (
           <button
             key={n}
-            type="button"
-            onClick={() => { onSelect(n); onClose(); }}
+            type='button'
+            onClick={() => {
+              onSelect(n);
+              onClose();
+            }}
             className={cn(
               'w-full text-sm text-center py-1.5 transition-colors select-none',
               selected === n
@@ -107,10 +117,6 @@ function PartDropdown({ items, selected, onSelect, onClose, anchorRect, dropdown
   );
 }
 
-// ──────────────────────────────────────────────
-// Single-part input (hour or minute)
-// ──────────────────────────────────────────────
-
 interface PartInputProps {
   value: number | null;
   max: number;
@@ -122,31 +128,44 @@ interface PartInputProps {
   id?: string;
 }
 
-function PartInput({ value, max, placeholder, items, dropdownHeader, disabled, onChange, id }: PartInputProps) {
-  const [display, setDisplay] = React.useState(value !== null ? String(value).padStart(2, '0') : '');
+function PartInput({
+  value,
+  max,
+  placeholder,
+  items,
+  dropdownHeader,
+  disabled,
+  onChange,
+  id,
+}: PartInputProps) {
+  const [display, setDisplay] = React.useState(
+    value !== null ? String(value).padStart(2, '0') : '',
+  );
   const [open, setOpen] = React.useState(false);
   const [mounted, setMounted] = React.useState(false);
   const containerRef = React.useRef<HTMLDivElement>(null);
   const dropdownRef = React.useRef<HTMLDivElement>(null);
 
-  React.useEffect(() => { setMounted(true); }, []);
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
 
-  // Sync display when value changes externally
   React.useEffect(() => {
     setDisplay(value !== null ? String(value).padStart(2, '0') : '');
   }, [value]);
 
-  // Close on outside click or page scroll
   React.useEffect(() => {
     if (!open) return;
     const close = (e: MouseEvent) => {
       const node = e.target as Node;
-      if (!containerRef.current?.contains(node) && !dropdownRef.current?.contains(node)) {
+      if (
+        !containerRef.current?.contains(node) &&
+        !dropdownRef.current?.contains(node)
+      ) {
         setOpen(false);
       }
     };
     const closeScroll = (e: Event) => {
-      // Ignore scroll events that originate inside the dropdown itself
       const target = e.target as Node;
       if (dropdownRef.current?.contains(target)) return;
       setOpen(false);
@@ -181,7 +200,6 @@ function PartInput({ value, max, placeholder, items, dropdownHeader, disabled, o
   };
 
   const handleBlur = () => {
-    // Only format/validate on blur, never close the dropdown here
     if (display.length === 1) {
       const n = clamp(parseInt(display, 10), 0, max);
       onChange(n);
@@ -190,11 +208,11 @@ function PartInput({ value, max, placeholder, items, dropdownHeader, disabled, o
   };
 
   return (
-    <div ref={containerRef} className="relative flex-1">
+    <div ref={containerRef} className='relative flex-1'>
       <input
         id={id}
-        type="text"
-        inputMode="numeric"
+        type='text'
+        inputMode='numeric'
         value={display}
         placeholder={placeholder}
         maxLength={2}
@@ -209,30 +227,30 @@ function PartInput({ value, max, placeholder, items, dropdownHeader, disabled, o
         )}
       />
 
-      {mounted && open && anchorRect && createPortal(
-        <PartDropdown
-          items={items}
-          selected={value}
-          onSelect={onChange}
-          onClose={() => setOpen(false)}
-          anchorRect={anchorRect}
-          dropdownRef={dropdownRef}
-          header={dropdownHeader}
-        />,
-        document.body,
-      )}
+      {mounted &&
+        open &&
+        anchorRect &&
+        createPortal(
+          <PartDropdown
+            items={items}
+            selected={value}
+            onSelect={onChange}
+            onClose={() => setOpen(false)}
+            anchorRect={anchorRect}
+            dropdownRef={dropdownRef}
+            header={dropdownHeader}
+          />,
+          document.body,
+        )}
     </div>
   );
 }
 
-// ──────────────────────────────────────────────
-// Public component
-// ──────────────────────────────────────────────
-
-export function TimeInput({
+function TimeInputInner({
   value,
   onChange,
   label,
+  error,
   required,
   disabled,
   minHour = 0,
@@ -240,14 +258,14 @@ export function TimeInput({
   className,
   containerClassName,
   id,
-}: TimeInputProps) {
-  // Keep local hour/minute state so each part shows its value
-  // independently before the other part is filled.
+}: Omit<TimeInputProps, 'control' | 'name'> & {
+  value: string;
+  onChange: (value: string) => void;
+}) {
   const initial = splitTime(value);
   const [localH, setLocalH] = React.useState<number | null>(initial.h);
   const [localM, setLocalM] = React.useState<number | null>(initial.m);
 
-  // Sync locals when value changes from outside (e.g. edit mode pre-fill or clear)
   const prevValue = React.useRef(value);
   React.useEffect(() => {
     if (value === prevValue.current) return;
@@ -260,17 +278,20 @@ export function TimeInput({
   function handleHourChange(newH: number | null) {
     setLocalH(newH);
     if (newH !== null && localM !== null) {
-      onChange(`${String(newH).padStart(2, '0')}:${String(localM).padStart(2, '0')}`);
+      onChange(
+        `${String(newH).padStart(2, '0')}:${String(localM).padStart(2, '0')}`,
+      );
     } else if (newH === null) {
       onChange('');
     }
-    // If only hour set and minute not yet chosen — keep silent, display shows "HH"
   }
 
   function handleMinChange(newM: number | null) {
     setLocalM(newM);
     if (localH !== null && newM !== null) {
-      onChange(`${String(localH).padStart(2, '0')}:${String(newM).padStart(2, '0')}`);
+      onChange(
+        `${String(localH).padStart(2, '0')}:${String(newM).padStart(2, '0')}`,
+      );
     } else if (newM === null) {
       onChange('');
     }
@@ -283,26 +304,26 @@ export function TimeInput({
       {label && (
         <label
           htmlFor={`${inputId}-h`}
-          className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5 block"
+          className='text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5 block'
         >
           {label}
-          {required && <span className="text-red-500 ml-0.5">*</span>}
+          {required && <span className='text-red-500 ml-0.5'>*</span>}
         </label>
       )}
 
-      <div className="flex items-center gap-1.5">
+      <div className='flex items-center gap-1.5'>
         <PartInput
           id={`${inputId}-h`}
           value={localH}
           max={maxHour}
-          placeholder="HH"
+          placeholder='HH'
           items={HOURS.filter((h) => h >= minHour && h <= maxHour)}
-          dropdownHeader="Hora"
+          dropdownHeader='Hora'
           {...(disabled !== undefined ? { disabled } : {})}
           onChange={handleHourChange}
         />
 
-        <span className="text-lg font-semibold text-slate-400 dark:text-slate-500 select-none leading-none pb-0.5">
+        <span className='text-lg font-semibold text-slate-400 dark:text-slate-500 select-none leading-none pb-0.5'>
           :
         </span>
 
@@ -310,13 +331,49 @@ export function TimeInput({
           id={`${inputId}-m`}
           value={localM}
           max={59}
-          placeholder="MM"
+          placeholder='MM'
           items={MINUTES}
-          dropdownHeader="Minuto"
+          dropdownHeader='Minuto'
           {...(disabled !== undefined ? { disabled } : {})}
           onChange={handleMinChange}
         />
       </div>
+
+      {error && (
+        <p className='mt-1 text-xs text-red-500 dark:text-red-400'>{error}</p>
+      )}
     </div>
+  );
+}
+
+export function TimeInput({
+  value,
+  onChange,
+  control,
+  name,
+  ...rest
+}: TimeInputProps) {
+  if (control && name) {
+    return (
+      <Controller
+        name={name}
+        control={control}
+        render={({ field }) => (
+          <TimeInputInner
+            value={field.value}
+            onChange={field.onChange}
+            {...rest}
+          />
+        )}
+      />
+    );
+  }
+
+  return (
+    <TimeInputInner
+      value={value ?? ''}
+      onChange={onChange ?? (() => {})}
+      {...rest}
+    />
   );
 }

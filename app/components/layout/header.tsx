@@ -10,9 +10,10 @@ interface HeaderProps {
   usedGB?: number;
   totalGB?: number;
   showStorage?: boolean;
+  headerAction?: React.ReactNode;
 }
 
-export function Header({ title, usedGB = 0, totalGB = 0, showStorage = true }: HeaderProps) {
+export function Header({ title, usedGB = 0, totalGB = 0, showStorage = true, headerAction }: HeaderProps) {
   const percentage = (usedGB / totalGB) * 100;
   const [isDark, setIsDark] = useState(false);
 
@@ -40,17 +41,20 @@ export function Header({ title, usedGB = 0, totalGB = 0, showStorage = true }: H
             {isDark ? <Sun /> : <Moon />}
           </Button>
         </div>
-        {showStorage && (
-          <div className="flex flex-col gap-1 w-full md:w-[30%]">
-            <span className="whitespace-nowrap text-sm text-gray-500 dark:text-slate-400 font-medium text-center">
-              {usedGB}GB de {totalGB}GB usados
-            </span>
-            <Progress value={percentage} className="h-2.5" />
-          </div>
-        )}
-        <Button variant="outline" size="icon" onClick={toggleTheme} className="hidden md:flex">
-          {isDark ? <Sun size={18} /> : <Moon size={18} />}
-        </Button>
+        <div className="flex items-center gap-3">
+          {headerAction}
+          {showStorage && (
+            <div className="flex flex-col gap-1 w-full md:w-[30%]">
+              <span className="whitespace-nowrap text-sm text-gray-500 dark:text-slate-400 font-medium text-center">
+                {usedGB}GB de {totalGB}GB usados
+              </span>
+              <Progress value={percentage} className="h-2.5" />
+            </div>
+          )}
+          <Button variant="outline" size="icon" onClick={toggleTheme} className="hidden md:flex">
+            {isDark ? <Sun size={18} /> : <Moon size={18} />}
+          </Button>
+        </div>
       </div>
     </div>
   );

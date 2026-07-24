@@ -8,7 +8,7 @@ import {
 } from 'lucide-react';
 import { useEffect } from 'react';
 
-import { Badge } from '@/app/components/badge';
+import { Badge } from '@/app/components/common/badge';
 import { Button } from '@/components/ui/button';
 import type { ConsultationDisease } from '@/types/consultation';
 

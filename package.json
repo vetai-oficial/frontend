@@ -7,10 +7,12 @@
     "build": "next build",
     "start": "next start",
     "tsc": "tsc --noEmit",
+    "format": "eslint --fix",
     "lint": "eslint"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
+    "@hookform/resolvers": "^5.2.2",
     "@radix-ui/react-label": "^2.1.8",
     "@radix-ui/react-progress": "^1.1.8",
     "@radix-ui/react-slot": "^1.2.4",
@@ -25,10 +27,12 @@
     "react": "19.2.0",
     "react-chartjs-2": "^5.2.0",
     "react-dom": "19.2.0",
+    "react-hook-form": "^7.73.1",
     "socket.io-client": "^4.8.3",
     "sonner": "^2.0.7",
     "tailwind-merge": "^3.4.0",
-    "tailwindcss-animate": "^1.0.7"
+    "tailwindcss-animate": "^1.0.7",
+    "yup": "^1.7.1"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

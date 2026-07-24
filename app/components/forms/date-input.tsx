@@ -3,36 +3,48 @@
 import { Calendar, ChevronLeft, ChevronRight } from 'lucide-react';
 import * as React from 'react';
 import { createPortal } from 'react-dom';
+import type { Control, FieldValues } from 'react-hook-form';
+import { Controller } from 'react-hook-form';
 
 import { cn } from '@/infra/utils';
 
 export interface DateInputProps {
-  value: string; // YYYY-MM-DD or empty
-  onChange: (value: string) => void; // emits YYYY-MM-DD or ''
+  value?: string;
+  onChange?: (value: string) => void;
   label?: string;
-  error?: string;
+  error?: string | undefined;
   placeholder?: string;
   className?: string;
   containerClassName?: string;
   required?: boolean;
   disabled?: boolean;
   id?: string;
+  control?: Control<FieldValues>;
+  name?: string;
 }
 
 const MONTHS = [
-  'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
-  'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro',
+  'Janeiro',
+  'Fevereiro',
+  'Março',
+  'Abril',
+  'Maio',
+  'Junho',
+  'Julho',
+  'Agosto',
+  'Setembro',
+  'Outubro',
+  'Novembro',
+  'Dezembro',
 ];
 const DAYS_SHORT = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
 
-// YYYY-MM-DD → dd/mm/YYYY
 function isoToDisplay(iso: string): string {
   if (!iso || iso.length < 10) return '';
   const [y, m, d] = iso.split('-');
   return `${d}/${m}/${y}`;
 }
 
-// digits only → dd/mm/YYYY (partial ok)
 function formatDigits(digits: string): string {
   const d = digits.slice(0, 8);
   if (d.length <= 2) return d;
@@ -40,7 +52,6 @@ function formatDigits(digits: string): string {
   return `${d.slice(0, 2)}/${d.slice(2, 4)}/${d.slice(4)}`;
 }
 
-// dd/mm/YYYY → YYYY-MM-DD (only if complete)
 function displayToIso(display: string): string {
   const digits = display.replace(/\D/g, '');
   if (digits.length < 8) return '';
@@ -63,18 +74,26 @@ function getFirstDayOfWeek(year: number, month: number) {
 }
 
 interface CalendarDropdownProps {
-  value: string; // YYYY-MM-DD or ''
+  value: string;
   onSelect: (iso: string) => void;
   onClose: () => void;
   anchorRect: DOMRect;
   dropdownRef: React.RefObject<HTMLDivElement | null>;
 }
 
-function CalendarDropdown({ value, onSelect, onClose, anchorRect, dropdownRef }: CalendarDropdownProps) {
+function CalendarDropdown({
+  value,
+  onSelect,
+  onClose,
+  anchorRect,
+  dropdownRef,
+}: CalendarDropdownProps) {
   const CALENDAR_HEIGHT = 300;
   const GAP = 6;
   const spaceBelow = window.innerHeight - anchorRect.bottom;
-  const openUpward = spaceBelow < CALENDAR_HEIGHT + GAP && anchorRect.top > CALENDAR_HEIGHT + GAP;
+  const openUpward =
+    spaceBelow < CALENDAR_HEIGHT + GAP &&
+    anchorRect.top > CALENDAR_HEIGHT + GAP;
 
   const style: React.CSSProperties = {
     position: 'fixed',
@@ -91,19 +110,27 @@ function CalendarDropdown({ value, onSelect, onClose, anchorRect, dropdownRef }:
   const [viewMonth, setViewMonth] = React.useState(initial.getMonth());
 
   const selectedParts = value
-    ? { y: parseInt(value.slice(0, 4)), m: parseInt(value.slice(5, 7)) - 1, d: parseInt(value.slice(8, 10)) }
+    ? {
+      y: parseInt(value.slice(0, 4)),
+      m: parseInt(value.slice(5, 7)) - 1,
+      d: parseInt(value.slice(8, 10)),
+    }
     : null;
 
   const daysInMonth = getDaysInMonth(viewYear, viewMonth);
   const firstDay = getFirstDayOfWeek(viewYear, viewMonth);
 
   const prevMonth = () => {
-    if (viewMonth === 0) { setViewMonth(11); setViewYear((y) => y - 1); }
-    else setViewMonth((m) => m - 1);
+    if (viewMonth === 0) {
+      setViewMonth(11);
+      setViewYear((y) => y - 1);
+    } else setViewMonth((m) => m - 1);
   };
   const nextMonth = () => {
-    if (viewMonth === 11) { setViewMonth(0); setViewYear((y) => y + 1); }
-    else setViewMonth((m) => m + 1);
+    if (viewMonth === 11) {
+      setViewMonth(0);
+      setViewYear((y) => y + 1);
+    } else setViewMonth((m) => m + 1);
   };
 
   const handleDay = (day: number) => {
@@ -124,50 +151,52 @@ function CalendarDropdown({ value, onSelect, onClose, anchorRect, dropdownRef }:
     ...Array(firstDay).fill(null),
     ...Array.from({ length: daysInMonth }, (_, i) => i + 1),
   ];
-  // pad to full weeks
   while (cells.length % 7 !== 0) cells.push(null);
 
   return (
     <div
       ref={dropdownRef}
       style={style}
-      onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); }}
-      className="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-xl shadow-slate-200/60 dark:shadow-slate-900/60 p-3 animate-in fade-in-0 zoom-in-95 duration-150"
+      onMouseDown={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+      }}
+      className='rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-xl shadow-slate-200/60 dark:shadow-slate-900/60 p-3 animate-in fade-in-0 zoom-in-95 duration-150'
     >
-      {/* Header */}
-      <div className="flex items-center justify-between mb-3 px-1">
+      <div className='flex items-center justify-between mb-3 px-1'>
         <button
-          type="button"
+          type='button'
           onClick={prevMonth}
-          className="p-1 rounded-md hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 hover:text-teal-600 dark:hover:text-teal-400 transition-colors"
+          className='p-1 rounded-md hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 hover:text-teal-600 dark:hover:text-teal-400 transition-colors'
         >
           <ChevronLeft size={16} />
         </button>
 
-        <span className="text-sm font-semibold text-slate-800 dark:text-slate-100 select-none">
+        <span className='text-sm font-semibold text-slate-800 dark:text-slate-100 select-none'>
           {MONTHS[viewMonth]} {viewYear}
         </span>
 
         <button
-          type="button"
+          type='button'
           onClick={nextMonth}
-          className="p-1 rounded-md hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 hover:text-teal-600 dark:hover:text-teal-400 transition-colors"
+          className='p-1 rounded-md hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 hover:text-teal-600 dark:hover:text-teal-400 transition-colors'
         >
           <ChevronRight size={16} />
         </button>
       </div>
 
-      {/* Day headers */}
-      <div className="grid grid-cols-7 mb-1">
+      <div className='grid grid-cols-7 mb-1'>
         {DAYS_SHORT.map((d) => (
-          <div key={d} className="text-center text-[11px] font-medium text-slate-400 dark:text-slate-500 py-1 select-none">
+          <div
+            key={d}
+            className='text-center text-[11px] font-medium text-slate-400 dark:text-slate-500 py-1 select-none'
+          >
             {d}
           </div>
         ))}
       </div>
 
-      {/* Day cells */}
-      <div className="grid grid-cols-7 gap-y-0.5">
+      <div className='grid grid-cols-7 gap-y-0.5'>
         {cells.map((day, idx) => {
           if (!day) return <div key={idx} />;
 
@@ -185,7 +214,7 @@ function CalendarDropdown({ value, onSelect, onClose, anchorRect, dropdownRef }:
           return (
             <button
               key={idx}
-              type="button"
+              type='button'
               onClick={() => handleDay(day)}
               className={cn(
                 'mx-auto flex h-8 w-8 items-center justify-center rounded-full text-sm transition-all duration-100 select-none',
@@ -202,19 +231,21 @@ function CalendarDropdown({ value, onSelect, onClose, anchorRect, dropdownRef }:
         })}
       </div>
 
-      {/* Footer */}
-      <div className="mt-3 pt-2.5 border-t border-slate-100 dark:border-slate-700 flex items-center justify-between">
+      <div className='mt-3 pt-2.5 border-t border-slate-100 dark:border-slate-700 flex items-center justify-between'>
         <button
-          type="button"
-          onClick={() => { onSelect(''); onClose(); }}
-          className="text-xs text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 transition-colors px-1"
+          type='button'
+          onClick={() => {
+            onSelect('');
+            onClose();
+          }}
+          className='text-xs text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 transition-colors px-1'
         >
           Limpar
         </button>
         <button
-          type="button"
+          type='button'
           onClick={goToToday}
-          className="text-xs font-medium text-teal-600 dark:text-teal-400 hover:text-teal-700 dark:hover:text-teal-300 transition-colors px-1"
+          className='text-xs font-medium text-teal-600 dark:text-teal-400 hover:text-teal-700 dark:hover:text-teal-300 transition-colors px-1'
         >
           Hoje
         </button>
@@ -223,7 +254,7 @@ function CalendarDropdown({ value, onSelect, onClose, anchorRect, dropdownRef }:
   );
 }
 
-export function DateInput({
+function DateInputInner({
   value,
   onChange,
   label,
@@ -234,21 +265,24 @@ export function DateInput({
   required,
   disabled,
   id,
-}: DateInputProps) {
+}: Omit<DateInputProps, 'control' | 'name'> & {
+  value: string;
+  onChange: (value: string) => void;
+}) {
   const [display, setDisplay] = React.useState(() => isoToDisplay(value));
   const [anchorRect, setAnchorRect] = React.useState<DOMRect | null>(null);
   const [mounted, setMounted] = React.useState(false);
   const containerRef = React.useRef<HTMLDivElement>(null);
   const dropdownRef = React.useRef<HTMLDivElement>(null);
 
-  React.useEffect(() => { setMounted(true); }, []);
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
 
-  // Sync display when value changes externally
   React.useEffect(() => {
     setDisplay(isoToDisplay(value));
   }, [value]);
 
-  // Close on outside click or scroll
   React.useEffect(() => {
     if (!anchorRect) return;
     const close = (e: MouseEvent) => {
@@ -283,7 +317,10 @@ export function DateInput({
 
   const toggleCalendar = () => {
     if (disabled) return;
-    if (anchorRect) { setAnchorRect(null); return; }
+    if (anchorRect) {
+      setAnchorRect(null);
+      return;
+    }
     const rect = containerRef.current?.getBoundingClientRect();
     if (rect) setAnchorRect(rect);
   };
@@ -296,16 +333,16 @@ export function DateInput({
       {label && (
         <label
           htmlFor={inputId}
-          className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5 block"
+          className='text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5 block'
         >
           {label}
-          {required && <span className="text-red-500 ml-0.5">*</span>}
+          {required && <span className='text-red-500 ml-0.5'>*</span>}
         </label>
       )}
-      <div className="relative" ref={containerRef}>
+      <div className='relative' ref={containerRef}>
         <input
           id={inputId}
-          type="text"
+          type='text'
           value={display}
           onChange={handleTextChange}
           placeholder={placeholder}
@@ -321,7 +358,7 @@ export function DateInput({
           )}
         />
         <button
-          type="button"
+          type='button'
           tabIndex={-1}
           onClick={toggleCalendar}
           disabled={disabled}
@@ -336,20 +373,55 @@ export function DateInput({
         </button>
       </div>
 
-      {mounted && open && anchorRect && createPortal(
-        <CalendarDropdown
-          value={value}
-          onSelect={handleSelect}
-          onClose={() => setAnchorRect(null)}
-          anchorRect={anchorRect}
-          dropdownRef={dropdownRef}
-        />,
-        document.body,
-      )}
+      {mounted &&
+        open &&
+        anchorRect &&
+        createPortal(
+          <CalendarDropdown
+            value={value}
+            onSelect={handleSelect}
+            onClose={() => setAnchorRect(null)}
+            anchorRect={anchorRect}
+            dropdownRef={dropdownRef}
+          />,
+          document.body,
+        )}
 
       {error && (
-        <p className="text-xs text-red-500 dark:text-red-400 mt-1">{error}</p>
+        <p className='text-xs text-red-500 dark:text-red-400 mt-1'>{error}</p>
       )}
     </div>
+  );
+}
+
+export function DateInput({
+  value,
+  onChange,
+  control,
+  name,
+  ...rest
+}: DateInputProps) {
+  if (control && name) {
+    return (
+      <Controller
+        name={name}
+        control={control}
+        render={({ field }) => (
+          <DateInputInner
+            value={field.value}
+            onChange={field.onChange}
+            {...rest}
+          />
+        )}
+      />
+    );
+  }
+
+  return (
+    <DateInputInner
+      value={value ?? ''}
+      onChange={onChange ?? (() => {})}
+      {...rest}
+    />
   );
 }

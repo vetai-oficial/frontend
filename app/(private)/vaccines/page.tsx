@@ -1,44 +1,40 @@
 'use client';
 
 import { Loader2, Pencil, Plus, Syringe, Trash2 } from 'lucide-react';
-import { useCallback, useEffect, useState } from 'react';
+import { useState } from 'react';
 
 import { VaccineFormModal } from './components/vaccine-form-modal';
 
-import { ConfirmModal } from '@/app/components/confirm-modal';
-import { DataTable } from '@/app/components/data-table';
-import { Header } from '@/app/components/header';
+import { ConfirmModal } from '@/app/components/common/confirm-modal';
+import { DataTable } from '@/app/components/data/data-table';
+import { Header } from '@/app/components/layout/header';
 import { Button } from '@/components/ui/button';
+import { usePaginatedResource } from '@/hooks/use-paginated-resource';
 import { vaccinesService } from '@/services/vaccines.service';
 import type { Vaccine } from '@/types/vaccine';
 import { fmtDate, fmtPeriod } from '@/utils/date-format';
 
 export default function VaccinesPage() {
-  const [vaccines, setVaccines] = useState<Vaccine[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState('');
-  const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [editVaccine, setEditVaccine] = useState<Vaccine | null>(null);
   const [deleteVaccine, setDeleteVaccine] = useState<Vaccine | null>(null);
   const [deleting, setDeleting] = useState(false);
 
-  const fetchVaccines = useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await vaccinesService.list({ search: search || undefined, page, size: 15 });
-      setVaccines(res.data);
-      setTotalPages(res.meta.total_pages);
-    } catch {
-      // silently fail
-    } finally {
-      setLoading(false);
-    }
-  }, [search, page]);
-
-  useEffect(() => { void fetchVaccines(); }, [fetchVaccines]);
+  const {
+    items: vaccines,
+    loading,
+    search,
+    page,
+    meta,
+    setSearch,
+    setPage,
+    refresh,
+  } = usePaginatedResource<Vaccine, { search?: string }>({
+    fetcher: vaccinesService.list,
+    initialFilters: { search: '' },
+    pageSize: 15,
+    debounceMs: 300,
+  });
 
   const handleDelete = async () => {
     if (!deleteVaccine) return;
@@ -46,9 +42,8 @@ export default function VaccinesPage() {
     try {
       await vaccinesService.delete(deleteVaccine.id);
       setDeleteVaccine(null);
-      void fetchVaccines();
+      await refresh();
     } catch {
-      // silently fail
     } finally {
       setDeleting(false);
     }
@@ -63,7 +58,7 @@ export default function VaccinesPage() {
           headers={['Nome', 'Código', 'Período de Revacinação', 'Criado em', 'Ações']}
           showSearch
           searchPlaceholder="Buscar vacina..."
-          onSearch={(v) => { setSearch(v); setPage(1); }}
+          onSearch={setSearch}
           columnWidths={['flex-1', 'w-32', 'w-44', 'w-36', 'w-24']}
           actions={
             <Button
@@ -145,9 +140,9 @@ export default function VaccinesPage() {
           )}
         </DataTable>
 
-        {totalPages > 1 && (
+        {(meta?.total_pages ?? 1) > 1 && (
           <div className="flex justify-center gap-2 mt-4">
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
+            {Array.from({ length: meta?.total_pages ?? 1 }, (_, i) => i + 1).map((p) => (
               <button
                 key={p}
                 onClick={() => setPage(p)}
@@ -167,7 +162,7 @@ export default function VaccinesPage() {
       {showCreateModal && (
         <VaccineFormModal
           onClose={() => setShowCreateModal(false)}
-          onSuccess={() => { setShowCreateModal(false); void fetchVaccines(); }}
+          onSuccess={() => { setShowCreateModal(false); void refresh(); }}
         />
       )}
 
@@ -175,7 +170,7 @@ export default function VaccinesPage() {
         <VaccineFormModal
           vaccine={editVaccine}
           onClose={() => setEditVaccine(null)}
-          onSuccess={() => { setEditVaccine(null); void fetchVaccines(); }}
+          onSuccess={() => { setEditVaccine(null); void refresh(); }}
         />
       )}
 

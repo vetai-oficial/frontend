@@ -5,7 +5,7 @@ import { Suspense } from 'react';
 
 import { PatientDetailContent } from './components/patient-detail-content';
 
-import { Header } from '@/app/components/header';
+import { Header } from '@/app/components/layout/header';
 
 export default function PatientDetailPage() {
   return (
