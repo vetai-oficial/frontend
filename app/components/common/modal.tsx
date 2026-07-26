@@ -8,7 +8,7 @@ import { cn } from '@/infra/utils';
 
 export interface ModalProps {
   title: string;
-  description?: string;
+  description?: string | undefined;
   children: ReactNode;
   onClose: () => void;
   maxWidth?: 'sm' | 'md' | 'lg' | 'xl';
