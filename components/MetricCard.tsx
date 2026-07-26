@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import React from 'react';
 
+import { Skeleton } from '@/components/ui/skeleton';
 import {
   Tooltip,
   TooltipContent,
@@ -63,24 +64,30 @@ export function MetricCard({
       <div className='flex items-start justify-between'>
         <div className='space-y-2'>
           <div className='flex items-center gap-2'>
-            <span className='text-sm font-medium text-muted-foreground'>
-              {title}
-            </span>
-            {tooltip && (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <HelpCircle className='h-3.5 w-3.5 text-muted-foreground/40 hover:text-muted-foreground/60 transition-colors' />
-                </TooltipTrigger>
-                <TooltipContent side='top' align='center'>
-                  <p className='max-w-[200px] leading-relaxed'>{tooltip}</p>
-                </TooltipContent>
-              </Tooltip>
+            {loading ? (
+              <Skeleton className='h-4 w-28' />
+            ) : (
+              <>
+                <span className='text-sm font-medium text-muted-foreground'>
+                  {title}
+                </span>
+                {tooltip && (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <HelpCircle className='h-3.5 w-3.5 text-muted-foreground/40 hover:text-muted-foreground/60 transition-colors' />
+                    </TooltipTrigger>
+                    <TooltipContent side='top' align='center'>
+                      <p className='max-w-[200px] leading-relaxed'>{tooltip}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                )}
+              </>
             )}
           </div>
 
           <div className='flex items-baseline gap-1'>
             {loading ? (
-              <div className='h-9 w-24 animate-pulse rounded-md bg-muted' />
+              <Skeleton className='h-9 w-20' />
             ) : (
               <h3 className='text-3xl font-bold tracking-tight text-foreground'>
                 {value}
@@ -90,13 +97,10 @@ export function MetricCard({
         </div>
 
         <div
-          className={cn(
-            'flex h-12 w-12 items-center justify-center rounded-xl transition-all duration-300 border',
-            loading ? 'bg-muted' : '',
-          )}
+          className='flex h-12 w-12 items-center justify-center rounded-xl transition-all duration-300 border'
           style={{
-            backgroundColor: !loading ? `${color}25` : undefined,
-            borderColor: !loading ? `${color}40` : 'transparent',
+            backgroundColor: `${color}25`,
+            borderColor: `${color}40`,
             color,
           }}
         >

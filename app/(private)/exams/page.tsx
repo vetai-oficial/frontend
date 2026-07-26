@@ -78,6 +78,7 @@ export default function ExamsPage() {
             showSearch={true}
             onSearch={handleSearch}
             searchPlaceholder="Buscar exames..."
+            maxBodyHeight={520}
           >
             {loading ? (
               <tr>

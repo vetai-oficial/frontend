@@ -39,6 +39,7 @@ import { AddVaccineModal } from './add-vaccine-modal';
 import { AddWeightModal } from './add-weight-modal';
 import { DeleteBtn } from './delete-btn';
 import { InfoCard } from './info-card';
+import { buildPrescriptionHtml, createPrescriptionBlobUrl, downloadPrescriptionAsPdf } from '../utils/prescription-pdf';
 
 import { PatientModal } from '@/app/components/business/patient-modal';
 import { UploadExamModal } from '@/app/components/business/upload-exam-modal';
@@ -46,7 +47,8 @@ import { Card } from '@/app/components/common/card';
 import { ConfirmModal } from '@/app/components/common/confirm-modal';
 import { SectionCard } from '@/app/components/data/section-card';
 import { Button } from '@/components/ui/button';
-import { SPECIE_LABELS } from '@/constants';
+import { Skeleton } from '@/components/ui/skeleton';
+import { SPECIE_LABELS, STORAGE_KEYS } from '@/constants';
 import { documentsService } from '@/services/documents.service';
 import { healthRecordsService } from '@/services/health-records.service';
 import { patientsService } from '@/services/patients.service';
@@ -68,10 +70,18 @@ import { EVENT_TYPE_MAP } from '@/types/schedule';
 import type { Study } from '@/types/study';
 import type { Tutor } from '@/types/tutor';
 
+// Autoria do registro clínico, exibida junto da data em cada bloco.
+function byAuthor(record: HealthRecord): string {
+  return record.recorded_by ? ` · por ${record.recorded_by.name}` : '';
+}
+
 export function PatientDetailContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const id = searchParams.get('id');
+  const user = typeof window !== 'undefined'
+    ? (() => { try { const s = localStorage.getItem(STORAGE_KEYS.USER); return s ? (JSON.parse(s) as import('@/types/auth').User) : null; } catch { return null; } })()
+    : null;
 
   const [patient, setPatient] = useState<Patient | null>(null);
   const [tutor, setTutor] = useState<Tutor | null>(null);
@@ -88,6 +98,7 @@ export function PatientDetailContent() {
   const [deleting, setDeleting] = useState(false);
   const [uploadingDoc, setUploadingDoc] = useState(false);
   const [viewingDoc, setViewingDoc] = useState<{ url: string; mimeType: string; fileName: string } | null>(null);
+  const [downloadingPdf, setDownloadingPdf] = useState(false);
   const [loadingDocId, setLoadingDocId] = useState<string | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<{ onConfirm: () => Promise<void> } | null>(null);
   const [confirmDeleting, setConfirmDeleting] = useState(false);
@@ -111,6 +122,7 @@ export function PatientDetailContent() {
   const [docsLoading, setDocsLoading] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const viewerIframeRef = useRef<HTMLIFrameElement>(null);
 
   const fetchPatient = useCallback(async () => {
     if (!id) return;
@@ -279,8 +291,52 @@ export function PatientDetailContent() {
   };
 
   if (loading) return (
-    <div className="flex items-center justify-center py-20">
-      <Loader2 size={32} className="animate-spin text-teal-600" />
+    <div className="flex flex-col gap-6">
+      {/* Header skeleton */}
+      <div className="flex items-center gap-4 mb-2">
+        <Skeleton className="w-9 h-9 rounded-lg" />
+        <div className="flex flex-col gap-2 flex-1">
+          <Skeleton className="h-5 w-48" />
+          <Skeleton className="h-3.5 w-32" />
+        </div>
+        <Skeleton className="w-9 h-9 rounded-lg" />
+        <Skeleton className="w-9 h-9 rounded-lg" />
+      </div>
+      {/* Info cards skeleton */}
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-3">
+        {Array.from({ length: 7 }).map((_, i) => (
+          <div key={i} className="flex flex-col gap-2 p-3 rounded-xl border border-slate-200 dark:border-slate-700">
+            <Skeleton className="w-7 h-7 rounded-lg" />
+            <Skeleton className="h-3 w-16" />
+            <Skeleton className="h-4 w-24" />
+            <Skeleton className="h-3 w-20" />
+          </div>
+        ))}
+      </div>
+      {/* Sections skeleton */}
+      {Array.from({ length: 4 }).map((_, i) => (
+        <div key={i} className="rounded-xl border border-slate-200 dark:border-slate-700 p-5 flex flex-col gap-3">
+          <div className="flex items-center justify-between">
+            <div className="flex flex-col gap-1.5">
+              <Skeleton className="h-4 w-32" />
+              <Skeleton className="h-3 w-48" />
+            </div>
+            <Skeleton className="h-9 w-36 rounded-lg" />
+          </div>
+          <div className="flex flex-col gap-2 mt-2">
+            {Array.from({ length: 3 }).map((_, j) => (
+              <div key={j} className="flex items-center gap-3 py-2">
+                <Skeleton className="w-8 h-8 rounded-lg shrink-0" />
+                <div className="flex flex-col gap-1.5 flex-1">
+                  <Skeleton className="h-3.5 w-40" />
+                  <Skeleton className="h-3 w-24" />
+                </div>
+                <Skeleton className="h-5 w-16 rounded-full" />
+              </div>
+            ))}
+          </div>
+        </div>
+      ))}
     </div>
   );
 
@@ -418,40 +474,52 @@ export function PatientDetailContent() {
           </Button>
         }
       >
-        {examsLoading ? <div className="py-8 flex justify-center"><Loader2 size={24} className="animate-spin text-teal-600" /></div>
-          : exams.length === 0 ? (
-            <div className="py-8 text-center">
-              <Microscope size={32} className="text-slate-300 dark:text-slate-600 mx-auto mb-2" />
-              <p className="text-sm text-slate-500 dark:text-slate-400">Nenhum exame encontrado.</p>
-            </div>
-          ) : (
-            <div className="divide-y divide-slate-100 dark:divide-slate-700">
-              {exams.map((exam) => (
-                <div key={exam.id} className="flex items-center justify-between py-3 px-1 gap-3">
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div className="w-8 h-8 rounded-lg bg-blue-100 dark:bg-blue-900/40 flex items-center justify-center shrink-0">
-                      <Microscope size={15} className="text-blue-600 dark:text-blue-400" />
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-sm font-medium text-slate-900 dark:text-white truncate">{exam.title ?? 'Exame'}</p>
-                      <p className="text-xs text-slate-500 dark:text-slate-400">{exam.examDate ? fmtDate(exam.examDate) : fmtDate(exam.created_at)}</p>
-                    </div>
+        {examsLoading ? (
+          <div className="flex flex-col gap-2 py-2">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <div key={i} className="flex items-center gap-3 py-2">
+                <Skeleton className="w-8 h-8 rounded-lg shrink-0" />
+                <div className="flex flex-col gap-1.5 flex-1">
+                  <Skeleton className="h-3.5 w-40" />
+                  <Skeleton className="h-3 w-24" />
+                </div>
+                <Skeleton className="h-5 w-16 rounded-full" />
+              </div>
+            ))}
+          </div>
+        ) : exams.length === 0 ? (
+          <div className="py-8 text-center">
+            <Microscope size={32} className="text-slate-300 dark:text-slate-600 mx-auto mb-2" />
+            <p className="text-sm text-slate-500 dark:text-slate-400">Nenhum exame encontrado.</p>
+          </div>
+        ) : (
+          <div className="divide-y divide-slate-100 dark:divide-slate-700">
+            {exams.map((exam) => (
+              <div key={exam.id} className="flex items-center justify-between py-3 px-1 gap-3">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="w-8 h-8 rounded-lg bg-blue-100 dark:bg-blue-900/40 flex items-center justify-center shrink-0">
+                    <Microscope size={15} className="text-blue-600 dark:text-blue-400" />
                   </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${STUDY_STATUS_COLORS[exam.status] ?? ''}`}>
-                      {STUDY_STATUS_LABELS[exam.status] ?? exam.status}
-                    </span>
-                    <Link href={`/exams/detail?id=${exam.id}`}>
-                      <Button variant="ghost" size="icon" className="h-7 w-7"><FileText size={14} /></Button>
-                    </Link>
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-slate-900 dark:text-white truncate">{exam.title ?? 'Exame'}</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">{exam.examDate ? fmtDate(exam.examDate) : fmtDate(exam.created_at)}</p>
                   </div>
                 </div>
-              ))}
-              <div className="pt-3 pb-1 text-center">
-                <Link href="/exams" className="text-xs text-teal-600 dark:text-teal-400 hover:underline underline-offset-2">Ver todos os exames →</Link>
+                <div className="flex items-center gap-2 shrink-0">
+                  <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${STUDY_STATUS_COLORS[exam.status] ?? ''}`}>
+                    {STUDY_STATUS_LABELS[exam.status] ?? exam.status}
+                  </span>
+                  <Link href={`/exams/detail?id=${exam.id}`}>
+                    <Button variant="ghost" size="icon" className="h-7 w-7"><FileText size={14} /></Button>
+                  </Link>
+                </div>
               </div>
+            ))}
+            <div className="pt-3 pb-1 text-center">
+              <Link href="/exams" className="text-xs text-teal-600 dark:text-teal-400 hover:underline underline-offset-2">Ver todos os exames →</Link>
             </div>
-          )}
+          </div>
+        )}
       </SectionCard>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
@@ -462,34 +530,46 @@ export function PatientDetailContent() {
             </Button>
           }
         >
-          {weightsLoading ? <div className="py-8 flex justify-center"><Loader2 size={24} className="animate-spin text-teal-600" /></div>
-            : weightRecords.length === 0 ? (
-              <div className="py-8 text-center">
-                <Scale size={32} className="text-slate-300 dark:text-slate-600 mx-auto mb-2" />
-                <p className="text-sm text-slate-500 dark:text-slate-400">Nenhum registro de peso.</p>
-              </div>
-            ) : (
-              <div className="divide-y divide-slate-100 dark:divide-slate-700">
-                {weightRecords.map((rec) => {
-                  const meta = rec.metadata as WeightMetadata;
-                  return (
-                    <div key={rec.id} className="flex items-center justify-between py-3 px-1 gap-3">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-lg bg-teal-100 dark:bg-teal-900/40 flex items-center justify-center shrink-0">
-                          <Scale size={15} className="text-teal-600 dark:text-teal-400" />
-                        </div>
-                        <div>
-                          <p className="text-sm font-semibold text-slate-900 dark:text-white">{meta.value} {meta.unit === 'KG' ? 'kg' : 'g'}</p>
-                          <p className="text-xs text-slate-500 dark:text-slate-400">{fmtDate(rec.date)}</p>
-                          {rec.notes && <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">{rec.notes}</p>}
-                        </div>
+          {weightsLoading ? (
+            <div className="flex flex-col gap-2 py-2">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <div key={i} className="flex items-center gap-3 py-2">
+                  <Skeleton className="w-8 h-8 rounded-lg shrink-0" />
+                  <div className="flex flex-col gap-1.5 flex-1">
+                    <Skeleton className="h-4 w-16" />
+                    <Skeleton className="h-3 w-20" />
+                  </div>
+                  <Skeleton className="w-7 h-7 rounded-lg" />
+                </div>
+              ))}
+            </div>
+          ) : weightRecords.length === 0 ? (
+            <div className="py-8 text-center">
+              <Scale size={32} className="text-slate-300 dark:text-slate-600 mx-auto mb-2" />
+              <p className="text-sm text-slate-500 dark:text-slate-400">Nenhum registro de peso.</p>
+            </div>
+          ) : (
+            <div className="divide-y divide-slate-100 dark:divide-slate-700">
+              {weightRecords.map((rec) => {
+                const meta = rec.metadata as WeightMetadata;
+                return (
+                  <div key={rec.id} className="flex items-center justify-between py-3 px-1 gap-3">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-lg bg-teal-100 dark:bg-teal-900/40 flex items-center justify-center shrink-0">
+                        <Scale size={15} className="text-teal-600 dark:text-teal-400" />
                       </div>
-                      <DeleteBtn onDelete={() => setDeleteConfirm({ onConfirm: () => handleDeleteRecord(rec.id, fetchWeights) })} />
+                      <div>
+                        <p className="text-sm font-semibold text-slate-900 dark:text-white">{meta.value} {meta.unit === 'KG' ? 'kg' : 'g'}</p>
+                        <p className="text-xs text-slate-500 dark:text-slate-400">{fmtDate(rec.date)}{byAuthor(rec)}</p>
+                        {rec.notes && <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">{rec.notes}</p>}
+                      </div>
                     </div>
-                  );
-                })}
-              </div>
-            )}
+                    <DeleteBtn onDelete={() => setDeleteConfirm({ onConfirm: () => handleDeleteRecord(rec.id, fetchWeights) })} />
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </SectionCard>
 
         <SectionCard title="Registros Clínicos" subtitle="Mais recentes no topo"
@@ -499,33 +579,45 @@ export function PatientDetailContent() {
             </Button>
           }
         >
-          {clinicalLoading ? <div className="py-8 flex justify-center"><Loader2 size={24} className="animate-spin text-teal-600" /></div>
-            : clinicalNotes.length === 0 ? (
-              <div className="py-8 text-center">
-                <FileText size={32} className="text-slate-300 dark:text-slate-600 mx-auto mb-2" />
-                <p className="text-sm text-slate-500 dark:text-slate-400">Nenhum registro clínico.</p>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {clinicalNotes.map((rec) => {
-                  const meta = rec.metadata as ClinicalNoteMetadata;
-                  return (
-                    <Card key={rec.id} className="p-4">
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="min-w-0 flex-1">
-                          <div className="flex items-center gap-2 mb-1">
-                            <p className="text-sm font-semibold text-slate-900 dark:text-white truncate">{meta.title}</p>
-                            <span className="text-xs text-slate-400 dark:text-slate-500 shrink-0">{fmtDate(rec.date)}</span>
-                          </div>
-                          <p className="text-sm text-slate-600 dark:text-slate-300 whitespace-pre-wrap">{meta.description}</p>
+          {clinicalLoading ? (
+            <div className="flex flex-col gap-3 py-2">
+              {Array.from({ length: 2 }).map((_, i) => (
+                <div key={i} className="p-4 rounded-xl border border-slate-200 dark:border-slate-700 flex flex-col gap-2">
+                  <div className="flex items-center gap-2">
+                    <Skeleton className="h-4 w-36" />
+                    <Skeleton className="h-3 w-20 ml-auto" />
+                  </div>
+                  <Skeleton className="h-3 w-full" />
+                  <Skeleton className="h-3 w-4/5" />
+                </div>
+              ))}
+            </div>
+          ) : clinicalNotes.length === 0 ? (
+            <div className="py-8 text-center">
+              <FileText size={32} className="text-slate-300 dark:text-slate-600 mx-auto mb-2" />
+              <p className="text-sm text-slate-500 dark:text-slate-400">Nenhum registro clínico.</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {clinicalNotes.map((rec) => {
+                const meta = rec.metadata as ClinicalNoteMetadata;
+                return (
+                  <Card key={rec.id} className="p-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <p className="text-sm font-semibold text-slate-900 dark:text-white truncate">{meta.title}</p>
+                          <span className="text-xs text-slate-400 dark:text-slate-500 shrink-0">{fmtDate(rec.date)}{byAuthor(rec)}</span>
                         </div>
-                        <DeleteBtn onDelete={() => setDeleteConfirm({ onConfirm: () => handleDeleteRecord(rec.id, fetchClinicalNotes) })} />
+                        <p className="text-sm text-slate-600 dark:text-slate-300 whitespace-pre-wrap">{meta.description}</p>
                       </div>
-                    </Card>
-                  );
-                })}
-              </div>
-            )}
+                      <DeleteBtn onDelete={() => setDeleteConfirm({ onConfirm: () => handleDeleteRecord(rec.id, fetchClinicalNotes) })} />
+                    </div>
+                  </Card>
+                );
+              })}
+            </div>
+          )}
         </SectionCard>
       </div>
 
@@ -537,56 +629,69 @@ export function PatientDetailContent() {
             </Button>
           }
         >
-          {vaccinesLoading ? <div className="py-8 flex justify-center"><Loader2 size={24} className="animate-spin text-teal-600" /></div>
-            : vaccines.length === 0 ? (
-              <div className="py-8 text-center">
-                <Syringe size={32} className="text-slate-300 dark:text-slate-600 mx-auto mb-2" />
-                <p className="text-sm text-slate-500 dark:text-slate-400">Nenhuma vacina registrada.</p>
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-slate-200 dark:border-slate-700">
-                      {['Vacina', 'Data', 'Dose', 'Lote', 'Próx. Revacinação', 'Dose Anterior', 'Aplicado por', ''].map((h) => (
-                        <th key={h} className="text-left py-2 px-3 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide whitespace-nowrap">{h}</th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100 dark:divide-slate-700/50">
-                    {vaccines.map((rec) => {
-                      const meta = rec.metadata as VaccineMetadata;
-                      return (
-                        <tr key={rec.id} className="hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors">
-                          <td className="py-3 px-3">
-                            <div className="flex items-center gap-2">
-                              <ShieldCheck size={14} className="text-green-500 shrink-0" />
-                              <div>
-                                <p className="font-medium text-slate-900 dark:text-white">{meta.vaccine_name}</p>
-                                <p className="text-xs font-mono text-slate-400 dark:text-slate-500">{meta.vaccine_code}</p>
-                              </div>
+          {vaccinesLoading ? (
+            <div className="flex flex-col gap-2 py-2">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <div key={i} className="flex items-center gap-3 py-2 border-b border-slate-100 dark:border-slate-700/50 last:border-0">
+                  <Skeleton className="w-8 h-8 rounded-lg shrink-0" />
+                  <div className="flex flex-col gap-1.5 flex-1">
+                    <Skeleton className="h-3.5 w-36" />
+                    <Skeleton className="h-3 w-20" />
+                  </div>
+                  <Skeleton className="h-5 w-12 rounded-full" />
+                  <Skeleton className="h-3 w-20" />
+                </div>
+              ))}
+            </div>
+          ) : vaccines.length === 0 ? (
+            <div className="py-8 text-center">
+              <Syringe size={32} className="text-slate-300 dark:text-slate-600 mx-auto mb-2" />
+              <p className="text-sm text-slate-500 dark:text-slate-400">Nenhuma vacina registrada.</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-slate-200 dark:border-slate-700">
+                    {['Vacina', 'Data', 'Dose', 'Lote', 'Próx. Revacinação', 'Dose Anterior', 'Aplicado por', ''].map((h) => (
+                      <th key={h} className="text-left py-2 px-3 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide whitespace-nowrap">{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-700/50">
+                  {vaccines.map((rec) => {
+                    const meta = rec.metadata as VaccineMetadata;
+                    return (
+                      <tr key={rec.id} className="hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors">
+                        <td className="py-3 px-3">
+                          <div className="flex items-center gap-2">
+                            <ShieldCheck size={14} className="text-green-500 shrink-0" />
+                            <div>
+                              <p className="font-medium text-slate-900 dark:text-white">{meta.vaccine_name}</p>
+                              <p className="text-xs font-mono text-slate-400 dark:text-slate-500">{meta.vaccine_code}</p>
                             </div>
-                          </td>
-                          <td className="py-3 px-3 text-slate-600 dark:text-slate-300 whitespace-nowrap">{fmtDate(rec.date)}</td>
-                          <td className="py-3 px-3">
-                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-400">{meta.dose_number}</span>
-                          </td>
-                          <td className="py-3 px-3 text-xs font-mono text-slate-500 dark:text-slate-400">{meta.batch ?? '—'}</td>
-                          <td className="py-3 px-3 text-xs text-slate-500 dark:text-slate-400 whitespace-nowrap">
-                            {meta.revaccination_date ? fmtDate(meta.revaccination_date) : '—'}
-                          </td>
-                          <td className="py-3 px-12 text-xs text-slate-500 dark:text-slate-400 whitespace-nowrap">
-                            {meta.previous_dose_date ? fmtDate(meta.previous_dose_date) : '—'}
-                          </td>
-                          <td className="py-3 px-3 text-xs text-slate-500 dark:text-slate-400">{meta.applied_by ?? '—'}</td>
-                          <td className="py-3 text-end px-3"><DeleteBtn onDelete={() => setDeleteConfirm({ onConfirm: () => handleDeleteRecord(rec.id, fetchVaccines) })} /></td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            )}
+                          </div>
+                        </td>
+                        <td className="py-3 px-3 text-slate-600 dark:text-slate-300 whitespace-nowrap">{fmtDate(rec.date)}<span className="block text-[11px] text-slate-400 dark:text-slate-500">{rec.recorded_by?.name ?? '—'}</span></td>
+                        <td className="py-3 px-3">
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-400">{meta.dose_number}</span>
+                        </td>
+                        <td className="py-3 px-3 text-xs font-mono text-slate-500 dark:text-slate-400">{meta.batch ?? '—'}</td>
+                        <td className="py-3 px-3 text-xs text-slate-500 dark:text-slate-400 whitespace-nowrap">
+                          {meta.revaccination_date ? fmtDate(meta.revaccination_date) : '—'}
+                        </td>
+                        <td className="py-3 px-12 text-xs text-slate-500 dark:text-slate-400 whitespace-nowrap">
+                          {meta.previous_dose_date ? fmtDate(meta.previous_dose_date) : '—'}
+                        </td>
+                        <td className="py-3 px-3 text-xs text-slate-500 dark:text-slate-400">{meta.applied_by ?? '—'}</td>
+                        <td className="py-3 text-end px-3"><DeleteBtn onDelete={() => setDeleteConfirm({ onConfirm: () => handleDeleteRecord(rec.id, fetchVaccines) })} /></td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
         </SectionCard>
 
         <SectionCard title="Receituário" subtitle="Receitas e prescrições"
@@ -596,50 +701,91 @@ export function PatientDetailContent() {
             </Button>
           }
         >
-          {prescriptionsLoading ? <div className="py-8 flex justify-center"><Loader2 size={24} className="animate-spin text-teal-600" /></div>
-            : prescriptions.length === 0 ? (
-              <div className="py-8 text-center">
-                <ClipboardList size={32} className="text-slate-300 dark:text-slate-600 mx-auto mb-2" />
-                <p className="text-sm text-slate-500 dark:text-slate-400">Nenhuma receita registrada.</p>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {prescriptions.map((rec) => {
-                  const meta = rec.metadata as unknown as PrescriptionMetadata;
-                  return (
-                    <Card key={rec.id} className="p-4">
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-2">
-                            <ClipboardList size={15} className="text-teal-600 dark:text-teal-400 shrink-0" />
-                            <span className="text-sm font-semibold text-slate-900 dark:text-white">
-                              {meta.include_date ? fmtDate(rec.date) : 'Receita'}
-                            </span>
-                            {!meta.include_date && (
-                              <span className="text-xs text-slate-400 dark:text-slate-500">{fmtDate(rec.date)}</span>
-                            )}
-                          </div>
-                          <div className="space-y-2">
-                            {(meta.medications ?? []).map((med, i) => (
-                              <div key={i} className="pl-3 border-l-2 border-teal-200 dark:border-teal-700">
-                                <p className="text-sm font-medium text-slate-900 dark:text-white">
-                                  <Pill size={12} className="inline mr-1.5 text-teal-500" />
-                                  {med.drug}
-                                  {med.form && <span className="text-slate-500 dark:text-slate-400 font-normal"> · {med.form}</span>}
-                                  {med.quantity && <span className="text-slate-500 dark:text-slate-400 font-normal"> · {med.quantity}</span>}
-                                </p>
-                                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{med.posology}</p>
-                              </div>
-                            ))}
-                          </div>
+          {prescriptionsLoading ? (
+            <div className="flex flex-col gap-3 py-2">
+              {Array.from({ length: 2 }).map((_, i) => (
+                <div key={i} className="p-4 rounded-xl border border-slate-200 dark:border-slate-700 flex flex-col gap-2">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Skeleton className="h-4 w-20" />
+                    <Skeleton className="h-3 w-24 ml-auto" />
+                  </div>
+                  <div className="pl-3 border-l-2 border-slate-200 dark:border-slate-700 flex flex-col gap-1.5">
+                    <Skeleton className="h-3.5 w-40" />
+                    <Skeleton className="h-3 w-56" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : prescriptions.length === 0 ? (
+            <div className="py-8 text-center">
+              <ClipboardList size={32} className="text-slate-300 dark:text-slate-600 mx-auto mb-2" />
+              <p className="text-sm text-slate-500 dark:text-slate-400">Nenhuma receita registrada.</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {prescriptions.map((rec) => {
+                const meta = rec.metadata as unknown as PrescriptionMetadata;
+                const latestWeight = weightRecords.length > 0
+                  ? (weightRecords[0]!.metadata as WeightMetadata).value
+                  : undefined;
+                return (
+                  <Card key={rec.id} className="p-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-2">
+                          <ClipboardList size={15} className="text-teal-600 dark:text-teal-400 shrink-0" />
+                          <span className="text-sm font-semibold text-slate-900 dark:text-white">
+                            {meta.include_date ? fmtDate(rec.date) : 'Receita'}
+                          </span>
+                          {!meta.include_date && (
+                            <span className="text-xs text-slate-400 dark:text-slate-500">{fmtDate(rec.date)}{byAuthor(rec)}</span>
+                          )}
                         </div>
+                        <div className="space-y-2">
+                          {(meta.medications ?? []).map((med, i) => (
+                            <div key={i} className="pl-3 border-l-2 border-teal-200 dark:border-teal-700">
+                              <p className="text-sm font-medium text-slate-900 dark:text-white">
+                                <Pill size={12} className="inline mr-1.5 text-teal-500" />
+                                {med.drug}
+                                {med.form && <span className="text-slate-500 dark:text-slate-400 font-normal"> · {med.form}</span>}
+                                {med.quantity && <span className="text-slate-500 dark:text-slate-400 font-normal"> · {med.quantity}</span>}
+                              </p>
+                              {med.usage && (
+                                <span className="inline-block text-[10px] font-medium text-teal-700 dark:text-teal-300 bg-teal-50 dark:bg-teal-900/30 rounded px-1.5 py-0.5 mt-0.5">
+                                  {med.usage}
+                                </span>
+                              )}
+                              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{med.posology}</p>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1 shrink-0">
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon-sm"
+                          title="Visualizar receita"
+                          onClick={() => {
+                            if (patient && user) {
+                              const logoUrl = `${window.location.origin}/logo-white.png`;
+                              const html = buildPrescriptionHtml(rec, patient, tutor, user, latestWeight, logoUrl);
+                              const url = createPrescriptionBlobUrl(html);
+                              setViewingDoc({ url, mimeType: 'text/html', fileName: `Receita - ${patient.name}.pdf` });
+                            }
+                          }}
+                          className="text-slate-400 hover:text-teal-600 hover:bg-teal-50 dark:hover:bg-teal-900/20"
+                        >
+                          <FileText size={14} />
+                        </Button>
                         <DeleteBtn onDelete={() => setDeleteConfirm({ onConfirm: () => handleDeleteRecord(rec.id, fetchPrescriptions) })} />
                       </div>
-                    </Card>
-                  );
-                })}
-              </div>
-            )}
+                    </div>
+                  </Card>
+                );
+              })}
+            </div>
+          )}
         </SectionCard>
       </div>
 
@@ -651,31 +797,43 @@ export function PatientDetailContent() {
             </Button>
           }
         >
-          {notesLoading ? <div className="py-8 flex justify-center"><Loader2 size={24} className="animate-spin text-teal-600" /></div>
-            : notes.length === 0 ? (
-              <div className="py-8 text-center">
-                <StickyNote size={32} className="text-slate-300 dark:text-slate-600 mx-auto mb-2" />
-                <p className="text-sm text-slate-500 dark:text-slate-400">Nenhuma nota registrada.</p>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {notes.map((rec) => {
-                  const meta = rec.metadata as NoteMetadata;
-                  return (
-                    <Card key={rec.id} className="p-4 bg-yellow-50/50 dark:bg-yellow-900/10 border-yellow-200 dark:border-yellow-800/40">
-                      <div className="flex items-start gap-3">
-                        <StickyNote size={16} className="text-yellow-500 shrink-0 mt-0.5" />
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm text-slate-700 dark:text-slate-300 whitespace-pre-wrap">{meta.text}</p>
-                          <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">{fmtDateTime(rec.created_at)}</p>
-                        </div>
-                        <DeleteBtn onDelete={() => setDeleteConfirm({ onConfirm: () => handleDeleteRecord(rec.id, fetchNotes) })} />
+          {notesLoading ? (
+            <div className="flex flex-col gap-3 py-2">
+              {Array.from({ length: 2 }).map((_, i) => (
+                <div key={i} className="p-4 rounded-xl border border-yellow-200 dark:border-yellow-800/40 bg-yellow-50/50 dark:bg-yellow-900/10 flex gap-3">
+                  <Skeleton className="w-5 h-5 rounded shrink-0 mt-0.5" />
+                  <div className="flex flex-col gap-1.5 flex-1">
+                    <Skeleton className="h-3.5 w-full" />
+                    <Skeleton className="h-3.5 w-4/5" />
+                    <Skeleton className="h-3 w-24 mt-1" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : notes.length === 0 ? (
+            <div className="py-8 text-center">
+              <StickyNote size={32} className="text-slate-300 dark:text-slate-600 mx-auto mb-2" />
+              <p className="text-sm text-slate-500 dark:text-slate-400">Nenhuma nota registrada.</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {notes.map((rec) => {
+                const meta = rec.metadata as NoteMetadata;
+                return (
+                  <Card key={rec.id} className="p-4 bg-yellow-50/50 dark:bg-yellow-900/10 border-yellow-200 dark:border-yellow-800/40">
+                    <div className="flex items-start gap-3">
+                      <StickyNote size={16} className="text-yellow-500 shrink-0 mt-0.5" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm text-slate-700 dark:text-slate-300 whitespace-pre-wrap">{meta.text}</p>
+                        <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">{fmtDateTime(rec.created_at)}{byAuthor(rec)}</p>
                       </div>
-                    </Card>
-                  );
-                })}
-              </div>
-            )}
+                      <DeleteBtn onDelete={() => setDeleteConfirm({ onConfirm: () => handleDeleteRecord(rec.id, fetchNotes) })} />
+                    </div>
+                  </Card>
+                );
+              })}
+            </div>
+          )}
         </SectionCard>
 
         <SectionCard title="Documentos" subtitle="Arquivos e documentos do paciente"
@@ -689,74 +847,116 @@ export function PatientDetailContent() {
             </>
           }
         >
-          {docsLoading ? <div className="py-8 flex justify-center"><Loader2 size={24} className="animate-spin text-teal-600" /></div>
-            : documents.length === 0 ? (
-              <div
-                className="py-10 border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-lg text-center cursor-pointer hover:border-teal-400 dark:hover:border-teal-600 transition-colors"
-                onClick={() => fileInputRef.current?.click()}
-              >
-                <Upload size={32} className="text-slate-300 dark:text-slate-600 mx-auto mb-2" />
-                <p className="text-sm text-slate-500 dark:text-slate-400">Clique para enviar um documento</p>
-                <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">PDF, imagens, etc.</p>
-              </div>
-            ) : (
-              <div className="divide-y divide-slate-100 dark:divide-slate-700">
-                {documents.map((doc) => (
-                  <div key={doc.id} className="flex items-center justify-between py-3 px-1 gap-3">
-                    <div className="flex items-center gap-3 min-w-0">
-                      <div className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-700 flex items-center justify-center shrink-0">
-                        <FileText size={15} className="text-slate-500 dark:text-slate-400" />
-                      </div>
-                      <div className="min-w-0">
-                        <p className="text-sm font-medium text-slate-900 dark:text-white truncate">{doc.fileName}</p>
-                        <p className="text-xs text-slate-500 dark:text-slate-400">{fmtDate(doc.created_at)}</p>
-                      </div>
+          {docsLoading ? (
+            <div className="flex flex-col gap-2 py-2">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <div key={i} className="flex items-center gap-3 py-2">
+                  <Skeleton className="w-8 h-8 rounded-lg shrink-0" />
+                  <div className="flex flex-col gap-1.5 flex-1">
+                    <Skeleton className="h-3.5 w-48" />
+                    <Skeleton className="h-3 w-20" />
+                  </div>
+                  <Skeleton className="w-7 h-7 rounded-lg" />
+                  <Skeleton className="w-7 h-7 rounded-lg" />
+                </div>
+              ))}
+            </div>
+          ) : documents.length === 0 ? (
+            <div
+              className="py-10 border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-lg text-center cursor-pointer hover:border-teal-400 dark:hover:border-teal-600 transition-colors"
+              onClick={() => fileInputRef.current?.click()}
+            >
+              <Upload size={32} className="text-slate-300 dark:text-slate-600 mx-auto mb-2" />
+              <p className="text-sm text-slate-500 dark:text-slate-400">Clique para enviar um documento</p>
+              <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">PDF, imagens, etc.</p>
+            </div>
+          ) : (
+            <div className="divide-y divide-slate-100 dark:divide-slate-700">
+              {documents.map((doc) => (
+                <div key={doc.id} className="flex items-center justify-between py-3 px-1 gap-3">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-700 flex items-center justify-center shrink-0">
+                      <FileText size={15} className="text-slate-500 dark:text-slate-400" />
                     </div>
-                    <div className="flex items-center gap-1 shrink-0">
-                      <Button
-                        variant="ghost"
-                        size="icon-sm"
-                        onClick={() => { void handleViewDocument(doc); }}
-                        disabled={loadingDocId === doc.id}
-                        className="text-slate-400 hover:text-teal-600 hover:bg-teal-50 dark:hover:bg-teal-900/20"
-                        title={doc.mimeType.startsWith('image/') || doc.mimeType.includes('pdf') ? 'Visualizar' : 'Baixar'}
-                      >
-                        {loadingDocId === doc.id
-                          ? <Loader2 size={14} className="animate-spin" />
-                          : doc.mimeType.startsWith('image/') || doc.mimeType.includes('pdf')
-                            ? <Eye size={14} />
-                            : <Download size={14} />}
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon-sm"
-                        onClick={() => setDeleteConfirm({ onConfirm: () => handleDeleteDocument(doc.id) })}
-                        className="text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20"
-                      >
-                        <Trash2 size={14} />
-                      </Button>
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-slate-900 dark:text-white truncate">{doc.fileName}</p>
+                      <p className="text-xs text-slate-500 dark:text-slate-400">{fmtDate(doc.created_at)}</p>
                     </div>
                   </div>
-                ))}
-              </div>
-            )}
+                  <div className="flex items-center gap-1 shrink-0">
+                    <Button
+                      variant="ghost"
+                      size="icon-sm"
+                      onClick={() => { void handleViewDocument(doc); }}
+                      disabled={loadingDocId === doc.id}
+                      className="text-slate-400 hover:text-teal-600 hover:bg-teal-50 dark:hover:bg-teal-900/20"
+                      title={doc.mimeType.startsWith('image/') || doc.mimeType.includes('pdf') ? 'Visualizar' : 'Baixar'}
+                    >
+                      {loadingDocId === doc.id
+                        ? <Loader2 size={14} className="animate-spin" />
+                        : doc.mimeType.startsWith('image/') || doc.mimeType.includes('pdf')
+                          ? <Eye size={14} />
+                          : <Download size={14} />}
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon-sm"
+                      onClick={() => setDeleteConfirm({ onConfirm: () => handleDeleteDocument(doc.id) })}
+                      className="text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20"
+                    >
+                      <Trash2 size={14} />
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </SectionCard>
       </div>
 
       {viewingDoc && (
         <div className="fixed inset-0 z-50 flex flex-col bg-black/80">
-          <div className="flex items-center justify-between px-4 py-3 bg-slate-900 shrink-0">
+          <div className="flex items-center justify-between px-4 py-3 bg-teal-700 dark:bg-teal-800 shrink-0">
             <p className="text-white font-medium text-sm truncate">{viewingDoc.fileName}</p>
-            <Button variant="ghost" size="icon-sm" onClick={closeDocViewer} className="text-slate-300 hover:text-white shrink-0">
-              <X size={18} />
-            </Button>
+            <div className="flex items-center gap-1 shrink-0">
+              {viewingDoc.mimeType === 'text/html' ? (
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  title="Baixar PDF"
+                  disabled={downloadingPdf}
+                  onClick={() => {
+                    setDownloadingPdf(true);
+                    fetch(viewingDoc.url)
+                      .then((r) => r.text())
+                      .then((html) => downloadPrescriptionAsPdf(html, viewingDoc.fileName))
+                      .finally(() => setDownloadingPdf(false));
+                  }}
+                  className="text-teal-100 hover:text-white hover:bg-teal-600 dark:hover:bg-teal-700"
+                >
+                  {downloadingPdf ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
+                </Button>
+              ) : (
+                <a
+                  href={viewingDoc.url}
+                  download={viewingDoc.fileName}
+                  title="Baixar"
+                  className="inline-flex items-center justify-center rounded-md h-7 w-7 text-teal-100 hover:text-white hover:bg-teal-600 dark:hover:bg-teal-700 transition-colors"
+                >
+                  <Download size={16} />
+                </a>
+              )}
+              <Button variant="ghost" size="icon-sm" onClick={closeDocViewer} className="text-teal-100 hover:text-white hover:bg-teal-600 dark:hover:bg-teal-700">
+                <X size={18} />
+              </Button>
+            </div>
           </div>
           {viewingDoc.mimeType.startsWith('image/') ? (
             <div className="flex-1 flex items-center justify-center p-4 overflow-auto">
               <img src={viewingDoc.url} alt={viewingDoc.fileName} className="max-w-full max-h-full object-contain rounded" />
             </div>
           ) : (
-            <iframe src={viewingDoc.url} className="flex-1 w-full border-0" title={viewingDoc.fileName} />
+            <iframe ref={viewerIframeRef} src={viewingDoc.url} className="flex-1 w-full border-0" title={viewingDoc.fileName} />
           )}
         </div>
       )}

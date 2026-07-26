@@ -1,3 +1,12 @@
+export interface UserAddress {
+  street: string;
+  number: string;
+  neighborhood: string;
+  city: string;
+  uf: string;
+  cep: string;
+}
+
 export interface User {
   id: string;
   name: string;
@@ -6,7 +15,15 @@ export interface User {
   role_id?: string;
   permissions: string[];
   crmv?: string;
+  phone?: string;
+  address?: UserAddress;
   hospital_id?: string;
+}
+
+export interface TeamMember {
+  id: string;
+  name: string;
+  crmv?: string;
 }
 
 export interface AuthResponse {
@@ -32,6 +49,7 @@ export interface RegisterPayload {
   name: string;
   email: string;
   password: string;
+  crmv?: string;
   invite_token?: string;
   plan_id?: string;
   hospital_name?: string;

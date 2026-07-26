@@ -1,5 +1,6 @@
 import { httpClient, buildQuery } from '@/infra/http-client';
 import type { PaginatedResponse, QueryParams } from '@/types/common';
+import type { Patient } from '@/types/patient';
 import type { Tutor, CreateTutorPayload, UpdateTutorPayload } from '@/types/tutor';
 
 export const tutorsService = {
@@ -8,6 +9,9 @@ export const tutorsService = {
 
   get: (id: string) =>
     httpClient<Tutor>(`tutors/${id}`),
+
+  listPatients: (tutorId: string, params?: QueryParams) =>
+    httpClient<PaginatedResponse<Patient>>(`tutors/${tutorId}/patients${buildQuery(params)}`),
 
   create: (data: CreateTutorPayload) =>
     httpClient<Tutor>('tutors', {

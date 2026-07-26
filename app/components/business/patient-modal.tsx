@@ -64,6 +64,7 @@ export function PatientModal({
         : '',
       deathDate: patient?.death_date ? patient.death_date.slice(0, 10) : '',
       microchip: patient?.microchip ?? '',
+      observations: patient?.observations ?? '',
       tutorId: patient?.tutor_id ?? '',
     },
   });
@@ -114,6 +115,7 @@ export function PatientModal({
         if (data.castrationDate) payload.castration_date = data.castrationDate;
         if (data.deathDate) payload.death_date = data.deathDate;
         if (data.microchip?.trim()) payload.microchip = data.microchip.trim();
+        payload.observations = data.observations?.trim() ?? '';
         result = await patientsService.update(patient.id, payload);
       } else {
         const payload = {
@@ -127,6 +129,8 @@ export function PatientModal({
         if (data.castrationDate) payload.castration_date = data.castrationDate;
         if (data.deathDate) payload.death_date = data.deathDate;
         if (data.microchip?.trim()) payload.microchip = data.microchip.trim();
+        if (data.observations?.trim())
+          payload.observations = data.observations.trim();
         result = await patientsService.create(payload);
       }
       onSuccess(result);
@@ -272,6 +276,23 @@ export function PatientModal({
               )}
             />
           </div>
+
+          <Controller
+            name='observations'
+            control={control}
+            render={({ field }) => (
+              <InputWithLabel
+                label='Observações'
+                tooltip='Alertas permanentes do pet, destacados nas fichas — ex.: alergias e cuidados especiais'
+                type='text'
+                value={field.value}
+                onChange={field.onChange}
+                placeholder='Ex: Alergia a dipirona'
+                maxLength={500}
+                error={errors.observations?.message}
+              />
+            )}
+          />
 
           <Controller
             name='deathDate'

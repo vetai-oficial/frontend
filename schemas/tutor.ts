@@ -19,6 +19,7 @@ export const tutorSchema = yup.object({
       return validatePhone(value);
     }),
   email: yup.string().required('Email é obrigatório').email('Email inválido'),
+  address: yup.string().optional(),
 });
 
 export type TutorFormData = yup.InferType<typeof tutorSchema>;

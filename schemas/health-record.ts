@@ -62,6 +62,7 @@ export const prescriptionSchema = yup.object({
         drug: yup.string().trim().required('Medicamento é obrigatório'),
         form: yup.string().optional(),
         quantity: yup.string().optional(),
+        usage: yup.string().optional(),
         posology: yup.string().trim().required('Posologia é obrigatória'),
       }),
     )

@@ -3,7 +3,7 @@
 import { yupResolver } from '@hookform/resolvers/yup';
 import { Loader2, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { Controller, useForm } from 'react-hook-form';
+import { Controller, useForm, type Resolver } from 'react-hook-form';
 
 import { InputWithLabel } from '@/app/components/forms/input-with-label';
 import { Button } from '@/components/ui/button';
@@ -31,12 +31,13 @@ export function TutorModal({ tutor, onClose, onSuccess }: TutorModalProps) {
     handleSubmit,
     formState: { errors },
   } = useForm<TutorFormData>({
-    resolver: yupResolver(tutorSchema),
+    resolver: yupResolver(tutorSchema) as unknown as Resolver<TutorFormData>,
     defaultValues: {
       name: tutor?.name ?? '',
       cpf: tutor?.cpf ?? '',
       phone: tutor?.phone ?? '',
       email: tutor?.email ?? '',
+      address: tutor?.address ?? '',
     },
   });
 
@@ -60,6 +61,7 @@ export function TutorModal({ tutor, onClose, onSuccess }: TutorModalProps) {
         } as UpdateTutorPayload;
         if (data.phone?.trim()) payload.phone = data.phone.trim();
         if (data.email?.trim()) payload.email = data.email.trim();
+        if (data.address?.trim()) payload.address = data.address.trim();
         result = await tutorsService.update(tutor.id, payload);
       } else {
         const payload = {
@@ -68,6 +70,7 @@ export function TutorModal({ tutor, onClose, onSuccess }: TutorModalProps) {
         } as CreateTutorPayload;
         if (data.phone?.trim()) payload.phone = data.phone.trim();
         if (data.email?.trim()) payload.email = data.email.trim();
+        if (data.address?.trim()) payload.address = data.address.trim();
         result = await tutorsService.create(payload);
       }
       onSuccess(result);
@@ -163,6 +166,21 @@ export function TutorModal({ tutor, onClose, onSuccess }: TutorModalProps) {
                 onChange={field.onChange}
                 placeholder='Ex: joao@email.com'
                 error={errors.email?.message}
+              />
+            )}
+          />
+
+          <Controller
+            name='address'
+            control={control}
+            render={({ field }) => (
+              <InputWithLabel
+                label='Endereço'
+                type='text'
+                value={field.value ?? ''}
+                onChange={field.onChange}
+                placeholder='Ex: Rua das Flores, 123 - São Paulo/SP'
+                error={errors.address?.message}
               />
             )}
           />

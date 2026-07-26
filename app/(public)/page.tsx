@@ -455,7 +455,7 @@ export default function LandingPage() {
 
           <div className='grid md:grid-cols-3 gap-6 lg:gap-8 max-w-5xl mx-auto'>
             {plans.map((plan, i) => {
-              const highlighted = plan.highlighted;
+              const { highlighted } = plan;
 
               return (
                 <Reveal key={plan.id} direction='up' delay={i * 100}>

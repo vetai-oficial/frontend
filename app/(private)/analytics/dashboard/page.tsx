@@ -11,6 +11,7 @@ import { SectionCard } from '@/app/components/data/section-card';
 import { AnalyticsChart } from '@/components/AnalyticsChart';
 import { MetricCard } from '@/components/MetricCard';
 import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
 import { SPECIE_LABELS, STUDY_STATUS_MAP } from '@/constants';
 import { cn } from '@/infra/utils';
 import type { DashboardData } from '@/services/analytics.service';
@@ -44,8 +45,8 @@ export default function Dashboard() {
     try {
       const res = await analyticsService.getDashboard();
       setData(res);
-    } catch (error) {
-      console.error('Failed to fetch dashboard data', error);
+    } catch (_) {
+      console.error('Failed to fetch dashboard data');
     } finally {
       setLoading(false);
     }
@@ -100,12 +101,12 @@ export default function Dashboard() {
           tooltip='Número total de pacientes cadastrados na clínica.'
         />
         <MetricCard
-          title='Total de Laudos'
+          title='Total de Exames'
           value={data?.total_studies ?? 0}
           icon='ClipboardList'
           color='#FFA726'
           loading={loading}
-          tooltip='Total de exames e laudos realizados.'
+          tooltip='Total de exames realizados.'
         />
         <MetricCard
           title='Hoje'
@@ -128,12 +129,12 @@ export default function Dashboard() {
       <div className='grid grid-cols-1 lg:grid-cols-2 gap-8'>
         {/* Overtime Chart + Today Activities */}
         <div className='lg:col-span-2 grid grid-cols-1 lg:grid-cols-3 gap-8'>
-          {data?.growth_overtime && (
+          {(loading || data?.growth_overtime) && (
             <AnalyticsChart
               type='line'
               title='Crescimento ao Longo do Tempo'
               subtitle='Comparativo de novos pacientes e consultas realizadas'
-              data={data.growth_overtime}
+              data={data?.growth_overtime ?? { labels: [], datasets: [] }}
               className='lg:col-span-2'
               height={310}
               loading={loading}
@@ -196,23 +197,23 @@ export default function Dashboard() {
         </div>
 
         {/* Species Distribution */}
-        {data?.patients_by_specie && (
+        {(loading || data?.patients_by_specie) && (
           <AnalyticsChart
             type='doughnut'
             title='Distribuição por Espécie'
             subtitle='Quais animais são mais atendidos'
-            data={data.patients_by_specie}
+            data={data?.patients_by_specie ?? { labels: [], datasets: [] }}
             loading={loading}
           />
         )}
 
         {/* Consultations Status */}
-        {data?.consultations_status && (
+        {(loading || data?.consultations_status) && (
           <AnalyticsChart
             type='bar'
             title='Status das Consultas'
             subtitle='Acompanhamento do progresso clínico'
-            data={data.consultations_status}
+            data={data?.consultations_status ?? { labels: [], datasets: [] }}
             loading={loading}
           />
         )}
@@ -221,13 +222,22 @@ export default function Dashboard() {
         <SectionCard
           title='Exames recentes'
           subtitle='Últimos resultados enviados.'
-          className='flex flex-col h-[440px]'
         >
           <DataTable
             headers={['Data', 'Paciente', 'Título', 'Status', 'Ações']}
-            className='h-full'
+            maxBodyHeight={340}
           >
-            {studies.length === 0 ? (
+            {loading ? (
+              Array.from({ length: 5 }).map((_, i) => (
+                <tr key={i}>
+                  <td className='p-4'><Skeleton className='h-4 w-20' /></td>
+                  <td className='p-4'><Skeleton className='h-4 w-28' /></td>
+                  <td className='p-4'><Skeleton className='h-4 w-32' /></td>
+                  <td className='p-4'><Skeleton className='h-5 w-20 rounded-full' /></td>
+                  <td className='p-4'><Skeleton className='h-4 w-10 ml-auto' /></td>
+                </tr>
+              ))
+            ) : studies.length === 0 ? (
               <tr>
                 <td colSpan={5} className='p-8 text-center'>
                   <Microscope
@@ -251,7 +261,7 @@ export default function Dashboard() {
                     className='hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors'
                   >
                     <td className='p-4 text-slate-600 dark:text-slate-300 text-sm'>
-                      {fmtDate(study.created_at)}
+                      {fmtDate(study.examDate ?? study.created_at)}
                     </td>
                     <td className='p-4'>
                       <span className='font-medium text-slate-900 dark:text-white text-sm'>
@@ -289,7 +299,22 @@ export default function Dashboard() {
         >
           <div className='flex-1 overflow-y-auto min-h-0'>
             <div className='flex flex-col gap-3 mt-4'>
-              {patients.length === 0 ? (
+              {loading ? (
+                Array.from({ length: 5 }).map((_, i) => (
+                  <Card key={i} className='p-4 shadow-sm border-slate-100 dark:border-white/5'>
+                    <div className='flex items-center justify-between'>
+                      <div className='flex items-center gap-3'>
+                        <Skeleton className='w-10 h-10 rounded-full' />
+                        <div className='flex flex-col gap-1.5'>
+                          <Skeleton className='h-4 w-28' />
+                          <Skeleton className='h-3 w-16' />
+                        </div>
+                      </div>
+                      <Skeleton className='h-3 w-16' />
+                    </div>
+                  </Card>
+                ))
+              ) : patients.length === 0 ? (
                 <div className='text-center py-8'>
                   <PawPrint
                     size={32}

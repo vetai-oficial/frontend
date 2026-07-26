@@ -2,7 +2,9 @@
 
 import {
   Activity,
+  BookOpen,
   CalendarDays,
+  CreditCard,
   LayoutDashboard,
   LogOut,
   Menu,
@@ -10,6 +12,7 @@ import {
   Microscope,
   Moon,
   PawPrint,
+  Pill,
   Settings,
   ShieldCheck,
   SquareActivity,
@@ -21,6 +24,8 @@ import {
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useState } from 'react';
+
+import { NotificationBell } from './notification-bell';
 
 import { useTheme } from '@/contexts/theme-context';
 import { useAuth } from '@/infra/auth-context';
@@ -69,12 +74,15 @@ export function Sidebar() {
       label: 'Vacinas',
       permission: 'vaccines:view',
     },
+    { href: '/medicines', icon: Pill, label: 'Medicações' },
     {
       href: '/schedule',
       icon: CalendarDays,
       label: 'Agendamentos',
       permission: 'schedule:view',
     },
+    { href: '/payments', icon: CreditCard, label: 'Pagamentos' },
+    { href: '/catalog', icon: BookOpen, label: 'Catálogo' },
     {
       href: '/monitoring',
       icon: SquareActivity,
@@ -100,7 +108,7 @@ export function Sidebar() {
     <>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className='md:hidden fixed top-4 left-4 z-50 p-2 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-lg'
+        className='md:hidden print:hidden fixed top-4 left-4 z-50 p-2 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-lg'
       >
         {isOpen ? (
           <X size={24} className='text-slate-900 dark:text-white' />
@@ -117,13 +125,16 @@ export function Sidebar() {
       )}
 
       <aside
-        className={`fixed md:relative w-64 flex-col border-r border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 h-full z-40 transition-transform duration-300 ${
+        className={`fixed md:relative print:hidden w-64 flex-col border-r border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 h-full z-40 transition-transform duration-300 ${
           isOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
         } md:flex`}
       >
-        <div className='h-16 flex items-center px-6 border-b border-slate-200 dark:border-slate-800'>
-          <Activity className='text-teal-600 mr-2' />
-          <span className='font-bold text-lg tracking-tight'>VetAI</span>
+        <div className='h-16 flex items-center justify-between px-6 border-b border-slate-200 dark:border-slate-800'>
+          <div className='flex items-center'>
+            <Activity className='text-teal-600 mr-2' />
+            <span className='font-bold text-lg tracking-tight'>VetAI</span>
+          </div>
+          <NotificationBell />
         </div>
         <nav className='flex-1 p-4 space-y-2'>
           {menuItems.map((item) => {

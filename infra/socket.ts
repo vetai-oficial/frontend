@@ -29,3 +29,29 @@ export function disconnectSocket(): void {
     socket = null;
   }
 }
+
+let notificationsSocket: Socket | null = null;
+
+export function getNotificationsSocket(): Socket {
+  if (notificationsSocket?.connected) return notificationsSocket;
+
+  const token =
+    typeof window !== 'undefined'
+      ? localStorage.getItem(STORAGE_KEYS.TOKEN)
+      : null;
+
+  notificationsSocket = io(`${API_BASE_URL}/notifications`, {
+    auth: { token },
+    transports: ['websocket', 'polling'],
+    autoConnect: true,
+  });
+
+  return notificationsSocket;
+}
+
+export function disconnectNotificationsSocket(): void {
+  if (notificationsSocket) {
+    notificationsSocket.disconnect();
+    notificationsSocket = null;
+  }
+}

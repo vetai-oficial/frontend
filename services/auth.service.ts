@@ -4,8 +4,17 @@ import type {
   LoginPayload,
   RefreshResponse,
   RegisterPayload,
+  TeamMember,
   User,
+  UserAddress,
 } from '@/types/auth';
+
+export interface UpdateProfilePayload {
+  name?: string;
+  crmv?: string;
+  phone?: string;
+  address?: Partial<UserAddress>;
+}
 
 export const authService = {
   login: (data: LoginPayload) =>
@@ -29,5 +38,14 @@ export const authService = {
     httpClient<RefreshResponse>('auth/refresh', {
       method: 'POST',
       body: JSON.stringify({ refresh_token }),
+    }),
+
+  listTeam: () =>
+    httpClient<TeamMember[]>('auth/team'),
+
+  updateProfile: (data: UpdateProfilePayload) =>
+    httpClient<User>('auth/me', {
+      method: 'PATCH',
+      body: JSON.stringify(data),
     }),
 };

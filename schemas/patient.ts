@@ -39,6 +39,11 @@ export const patientSchema = yup.object({
       return !isNaN(date.getTime());
     }),
   microchip: yup.string().nullable().optional(),
+  observations: yup
+    .string()
+    .nullable()
+    .optional()
+    .max(500, 'Observações deve ter no máximo 500 caracteres'),
   tutorId: yup.string().required('Tutor é obrigatório'),
 });
 
@@ -51,5 +56,6 @@ export interface PatientFormData {
   castrationDate: string;
   deathDate: string;
   microchip: string;
+  observations: string;
   tutorId: string;
 }

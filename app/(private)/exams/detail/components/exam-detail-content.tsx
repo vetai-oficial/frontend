@@ -127,26 +127,28 @@ export function ExamDetailContent() {
 
   return (
     <>
-      <div className="flex items-center gap-4 mb-6">
-        <Link href="/exams">
-          <Button variant="ghost" size="icon">
-            <ArrowLeft size={20} />
-          </Button>
-        </Link>
-        <div className="flex-1">
-          <h2 className="text-xl font-bold text-slate-900 dark:text-white">
-            {study.title ?? 'Exame'}
-          </h2>
-          <p className="text-sm text-slate-500 dark:text-slate-400">
-            Paciente: {study.patient?.name ?? '-'}
-          </p>
+      <div className="flex flex-col gap-3 mb-6 sm:flex-row sm:items-center sm:gap-4">
+        <div className="flex items-center gap-3 min-w-0">
+          <Link href="/exams">
+            <Button variant="ghost" size="icon" className="shrink-0">
+              <ArrowLeft size={20} />
+            </Button>
+          </Link>
+          <div className="min-w-0">
+            <h2 className="text-xl font-bold text-slate-900 dark:text-white truncate">
+              {study.title ?? 'Exame'}
+            </h2>
+            <p className="text-sm text-slate-500 dark:text-slate-400 truncate">
+              Paciente: {study.patient?.name ?? '-'}
+            </p>
+          </div>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 flex-wrap sm:ml-auto sm:flex-nowrap">
           <Button
             variant="outline"
             onClick={() => { void openPdf(); }}
             disabled={loadingPdf}
-            className="gap-2"
+            className="gap-2 text-sm"
           >
             {loadingPdf ? <Loader2 size={16} className="animate-spin" /> : <FileText size={16} />}
             Visualizar exame
@@ -154,7 +156,7 @@ export function ExamDetailContent() {
           {study.status === 'COMPLETED' && hasAlteredValues && (
             <Button
               onClick={() => router.push(`/exams/prevention?id=${study.id}`)}
-              className="bg-teal-600 dark:bg-teal-700 text-white hover:bg-teal-700 dark:hover:bg-teal-800 gap-2"
+              className="bg-teal-600 dark:bg-teal-700 text-white hover:bg-teal-700 dark:hover:bg-teal-800 gap-2 text-sm"
             >
               <ShieldCheck size={16} />
               Prevenção
@@ -165,88 +167,129 @@ export function ExamDetailContent() {
       </div>
 
       {study.results.length > 0 ? (
-        study.results.map((result, i) => {
-          const { prevention } = study;
-          const hasSubgroups = result.values.some((v) => v.subgroup);
-          const subgroups = hasSubgroups
-            ? [...new Set(result.values.map((v) => v.subgroup).filter(Boolean))] as string[]
-            : [];
+        study.results
+          .filter((result) => !/^(comentários|observações|obs\.?|notas|laudo)$/i.test(result.title.trim()))
+          .map((result, i) => {
+            const { prevention } = study;
+            const hasSubgroups = result.values.some((v) => v.subgroup);
+            const subgroups = hasSubgroups
+              ? [...new Set(result.values.map((v) => v.subgroup).filter(Boolean))] as string[]
+              : [];
 
-          const renderValues = (values: typeof result.values) =>
-            values.map((val, j) => {
-              const isNA = val.value === 'N/A';
-              const isAltered = !isNA && (val.status === 'HIGHER' || val.status === 'LOWER');
-              const referenceText = formatReference(val);
-              const alteredInfo = isAltered
-                ? prevention?.alteredValues.find((a) => a.name === val.title)
-                : undefined;
-              const isClickable = !!alteredInfo;
-              return (
-                <Card
-                  key={j}
-                  {...(isClickable ? { onClick: () => setSelectedValue(alteredInfo) } : {})}
-                  className={`p-4 transition-colors ${
-                    isAltered
-                      ? 'border-red-300 dark:border-red-700/60 bg-red-50/50 dark:bg-red-900/10'
-                      : isNA
-                        ? 'opacity-60'
-                        : ''
-                  } ${isClickable ? 'cursor-pointer hover:shadow-md' : ''}`}
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0 flex-1">
-                      <p className={`font-medium text-sm truncate ${isAltered ? 'text-red-700 dark:text-red-400' : 'text-slate-900 dark:text-white'}`}>
-                        {val.title}
-                      </p>
-                      {val.unit && (
-                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                          Unidade: {val.unit}
+            const renderValues = (values: typeof result.values) =>
+              values.map((val, j) => {
+                const isNA = val.value === 'N/A';
+                const isAltered = !isNA && (val.status === 'HIGHER' || val.status === 'LOWER');
+                const referenceText = formatReference(val);
+                const alteredInfo = isAltered
+                  ? prevention?.alteredValues.find((a) => a.name === val.title)
+                  : undefined;
+                const isClickable = !!alteredInfo;
+                const isQualitative = !isNA && isNaN(Number(val.value));
+                return (
+                  <Card
+                    key={j}
+                    {...(isClickable ? { onClick: () => setSelectedValue(alteredInfo) } : {})}
+                    className={`p-4 transition-colors ${
+                      isAltered
+                        ? 'border-red-300 dark:border-red-700/60 bg-red-50/50 dark:bg-red-900/10'
+                        : isNA
+                          ? 'opacity-60'
+                          : ''
+                    } ${isClickable ? 'cursor-pointer hover:shadow-md' : ''}`}
+                  >
+                    {isQualitative ? (
+                      <div className="flex flex-col gap-2">
+                        <div className="flex items-center justify-between gap-2">
+                          <p className={`font-medium text-sm ${isAltered ? 'text-red-700 dark:text-red-400' : 'text-slate-900 dark:text-white'}`}>
+                            {val.title}
+                          </p>
+                          {!isNA && (
+                            <Badge color={isAltered ? 'red' : 'green'}>
+                              {val.status === 'HIGHER' ? 'Alterado' : 'Normal'}
+                            </Badge>
+                          )}
+                        </div>
+                        <p className={`text-sm ${isAltered ? 'text-red-600 dark:text-red-400' : 'text-slate-600 dark:text-slate-300'}`}>
+                          {val.value}
                         </p>
-                      )}
-                      {referenceText && (
-                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                        {referenceText && (
+                          <p className="text-xs text-slate-500 dark:text-slate-400">
                           Referência: {referenceText}
-                        </p>
-                      )}
-                    </div>
-                    <div className="text-right shrink-0">
-                      <p className={`text-lg font-bold ${isAltered ? 'text-red-600 dark:text-red-400' : isNA ? 'text-slate-400 dark:text-slate-500' : 'text-slate-900 dark:text-white'}`}>
-                        {val.value}
-                      </p>
-                      {!isNA && (
-                        <Badge color={isAltered ? 'red' : 'green'}>
-                          {val.status === 'HIGHER' ? 'Alto' : val.status === 'LOWER' ? 'Baixo' : 'Normal'}
-                        </Badge>
-                      )}
-                    </div>
-                  </div>
-                </Card>
-              );
-            });
-
-          return (
-            <SectionCard key={i} title={result.title} subtitle="Resultados do exame" className="mb-4">
-              {hasSubgroups ? (
-                <div className="space-y-4">
-                  {subgroups.map((sg) => (
-                    <div key={sg}>
-                      <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400 mb-2 px-1">
-                        {sg}
-                      </p>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        {renderValues(result.values.filter((v) => v.subgroup === sg))}
+                          </p>
+                        )}
                       </div>
+                    ) : (
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0 flex-1">
+                          <p className={`font-medium text-sm truncate ${isAltered ? 'text-red-700 dark:text-red-400' : 'text-slate-900 dark:text-white'}`}>
+                            {val.title}
+                          </p>
+                          {val.unit && (
+                            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                            Unidade: {val.unit}
+                            </p>
+                          )}
+                          {referenceText && (
+                            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                            Referência: {referenceText}
+                            </p>
+                          )}
+                        </div>
+                        <div className="text-right shrink-0">
+                          <p className={`text-lg font-bold ${isAltered ? 'text-red-600 dark:text-red-400' : isNA ? 'text-slate-400 dark:text-slate-500' : 'text-slate-900 dark:text-white'}`}>
+                            {val.value}
+                          </p>
+                          {!isNA && (
+                            <Badge color={isAltered ? 'red' : 'green'}>
+                              {val.status === 'HIGHER' ? 'Alto' : val.status === 'LOWER' ? 'Baixo' : 'Normal'}
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </Card>
+                );
+              });
+
+            const renderMixed = (values: typeof result.values) => {
+              const qualitative = values.filter((v) => v.value !== 'N/A' && isNaN(Number(v.value)));
+              const numeric = values.filter((v) => !qualitative.includes(v));
+              return (
+                <div className="flex flex-col gap-3">
+                  {numeric.length > 0 && (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {renderValues(numeric)}
                     </div>
-                  ))}
+                  )}
+                  {qualitative.length > 0 && (
+                    <div className="flex flex-col gap-3">
+                      {renderValues(qualitative)}
+                    </div>
+                  )}
                 </div>
-              ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {renderValues(result.values)}
-                </div>
-              )}
-            </SectionCard>
-          );
-        })
+              );
+            };
+
+            return (
+              <SectionCard key={i} title={result.title} subtitle="Resultados do exame" className="mb-4">
+                {hasSubgroups ? (
+                  <div className="space-y-4">
+                    {subgroups.map((sg) => (
+                      <div key={sg}>
+                        <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400 mb-2 px-1">
+                          {sg}
+                        </p>
+                        {renderMixed(result.values.filter((v) => v.subgroup === sg))}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  renderMixed(result.values)
+                )}
+              </SectionCard>
+            );
+          })
       ) : (
         <Card className="p-8 text-center">
           <Microscope size={32} className="text-slate-300 dark:text-slate-600 mx-auto mb-2" />
@@ -259,18 +302,21 @@ export function ExamDetailContent() {
       )}
 
       {pdfUrl && (
-        <div className="fixed inset-0 z-50 flex flex-col bg-black/80">
-          <div className="flex items-center justify-between px-4 py-3 bg-slate-900 shrink-0">
-            <p className="text-white font-medium text-sm">{study.title ?? 'Exame'}</p>
-            <Button variant="ghost" size="icon-sm" onClick={closePdf} className="text-slate-300 hover:text-white">
-              <X size={18} />
-            </Button>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={closePdf} />
+          <div className="relative flex flex-col bg-white dark:bg-slate-900 rounded-xl shadow-2xl w-full max-w-4xl h-[90vh]">
+            <div className="flex items-center justify-between px-5 py-3 border-b border-slate-200 dark:border-slate-700 shrink-0">
+              <p className="font-semibold text-sm text-slate-900 dark:text-white truncate">{study.title ?? 'Exame'}</p>
+              <Button variant="ghost" size="icon-sm" onClick={closePdf} className="text-slate-500 hover:text-slate-900 dark:hover:text-white shrink-0">
+                <X size={18} />
+              </Button>
+            </div>
+            <iframe
+              src={pdfUrl}
+              className="flex-1 w-full border-0 rounded-b-xl"
+              title="Visualizar exame"
+            />
           </div>
-          <iframe
-            src={pdfUrl}
-            className="flex-1 w-full border-0"
-            title="Visualizar exame"
-          />
         </div>
       )}
 
