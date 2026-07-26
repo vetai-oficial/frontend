@@ -1,5 +1,5 @@
 import { httpClient } from '@/infra/http-client';
-import type { AuthResponse, LoginPayload, RegisterPayload, User, UserAddress } from '@/types/auth';
+import type { AuthResponse, LoginPayload, RegisterPayload, TeamMember, User, UserAddress } from '@/types/auth';
 
 export interface UpdateProfilePayload {
   name?: string;
@@ -23,6 +23,9 @@ export const authService = {
 
   getProfile: () =>
     httpClient<User>('auth/me'),
+
+  listTeam: () =>
+    httpClient<TeamMember[]>('auth/team'),
 
   updateProfile: (data: UpdateProfilePayload) =>
     httpClient<User>('auth/me', {

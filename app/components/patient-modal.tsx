@@ -40,6 +40,7 @@ export function PatientModal({ patient, onClose, onSuccess }: PatientModalProps)
     patient?.death_date ? patient.death_date.slice(0, 10) : '',
   );
   const [microchip, setMicrochip] = useState(patient?.microchip ?? '');
+  const [observations, setObservations] = useState(patient?.observations ?? '');
 
   const [selectedTutor, setSelectedTutor] = useState<Tutor | null>(null);
   const [tutorSearch, setTutorSearch] = useState('');
@@ -121,6 +122,7 @@ export function PatientModal({ patient, onClose, onSuccess }: PatientModalProps)
         if (castrationDate) payload.castration_date = castrationDate;
         if (deathDate) payload.death_date = deathDate;
         if (microchip.trim()) payload.microchip = microchip.trim();
+        payload.observations = observations.trim();
         result = await patientsService.update(patient.id, payload);
       } else {
         const payload = {
@@ -134,6 +136,7 @@ export function PatientModal({ patient, onClose, onSuccess }: PatientModalProps)
         if (castrationDate) payload.castration_date = castrationDate;
         if (deathDate) payload.death_date = deathDate;
         if (microchip.trim()) payload.microchip = microchip.trim();
+        if (observations.trim()) payload.observations = observations.trim();
         result = await patientsService.create(payload);
       }
       onSuccess(result);
@@ -224,6 +227,16 @@ export function PatientModal({ patient, onClose, onSuccess }: PatientModalProps)
               placeholder="Ex: 900123456789012"
             />
           </div>
+
+          <InputWithLabel
+            label="Observações"
+            tooltip="Alertas permanentes do pet, destacados nas fichas — ex.: alergias e cuidados especiais"
+            type="text"
+            value={observations}
+            onChange={(e) => setObservations(e.target.value)}
+            placeholder="Ex: Alergia a dipirona"
+            maxLength={500}
+          />
 
           <DateInput
             label="Data de falecimento"

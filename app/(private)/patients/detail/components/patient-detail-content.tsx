@@ -70,6 +70,11 @@ import { EVENT_TYPE_MAP } from '@/types/schedule';
 import type { Study } from '@/types/study';
 import type { Tutor } from '@/types/tutor';
 
+// Autoria do registro clínico, exibida junto da data em cada bloco.
+function byAuthor(record: HealthRecord): string {
+  return record.recorded_by ? ` · por ${record.recorded_by.name}` : '';
+}
+
 export function PatientDetailContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -553,7 +558,7 @@ export function PatientDetailContent() {
                         </div>
                         <div>
                           <p className="text-sm font-semibold text-slate-900 dark:text-white">{meta.value} {meta.unit === 'KG' ? 'kg' : 'g'}</p>
-                          <p className="text-xs text-slate-500 dark:text-slate-400">{fmtDate(rec.date)}</p>
+                          <p className="text-xs text-slate-500 dark:text-slate-400">{fmtDate(rec.date)}{byAuthor(rec)}</p>
                           {rec.notes && <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">{rec.notes}</p>}
                         </div>
                       </div>
@@ -600,7 +605,7 @@ export function PatientDetailContent() {
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-2 mb-1">
                             <p className="text-sm font-semibold text-slate-900 dark:text-white truncate">{meta.title}</p>
-                            <span className="text-xs text-slate-400 dark:text-slate-500 shrink-0">{fmtDate(rec.date)}</span>
+                            <span className="text-xs text-slate-400 dark:text-slate-500 shrink-0">{fmtDate(rec.date)}{byAuthor(rec)}</span>
                           </div>
                           <p className="text-sm text-slate-600 dark:text-slate-300 whitespace-pre-wrap">{meta.description}</p>
                         </div>
@@ -665,7 +670,7 @@ export function PatientDetailContent() {
                               </div>
                             </div>
                           </td>
-                          <td className="py-3 px-3 text-slate-600 dark:text-slate-300 whitespace-nowrap">{fmtDate(rec.date)}</td>
+                          <td className="py-3 px-3 text-slate-600 dark:text-slate-300 whitespace-nowrap">{fmtDate(rec.date)}<span className="block text-[11px] text-slate-400 dark:text-slate-500">{rec.recorded_by?.name ?? '—'}</span></td>
                           <td className="py-3 px-3">
                             <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-400">{meta.dose_number}</span>
                           </td>
@@ -731,7 +736,7 @@ export function PatientDetailContent() {
                               {meta.include_date ? fmtDate(rec.date) : 'Receita'}
                             </span>
                             {!meta.include_date && (
-                              <span className="text-xs text-slate-400 dark:text-slate-500">{fmtDate(rec.date)}</span>
+                              <span className="text-xs text-slate-400 dark:text-slate-500">{fmtDate(rec.date)}{byAuthor(rec)}</span>
                             )}
                           </div>
                           <div className="space-y-2">
@@ -818,7 +823,7 @@ export function PatientDetailContent() {
                         <StickyNote size={16} className="text-yellow-500 shrink-0 mt-0.5" />
                         <div className="flex-1 min-w-0">
                           <p className="text-sm text-slate-700 dark:text-slate-300 whitespace-pre-wrap">{meta.text}</p>
-                          <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">{fmtDateTime(rec.created_at)}</p>
+                          <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">{fmtDateTime(rec.created_at)}{byAuthor(rec)}</p>
                         </div>
                         <DeleteBtn onDelete={() => setDeleteConfirm({ onConfirm: () => handleDeleteRecord(rec.id, fetchNotes) })} />
                       </div>

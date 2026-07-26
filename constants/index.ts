@@ -1,5 +1,6 @@
-export { SPECIE_LABELS } from './species';
+export { SEX_LABELS, SPECIE_LABELS } from './species';
 export { STUDY_STATUS_MAP } from './study';
+export * from './monitoring';
 
 export const STORAGE_KEYS = {
   TOKEN: 'vetai_token',

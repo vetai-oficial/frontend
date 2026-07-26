@@ -18,6 +18,12 @@ export interface User {
   hospital_id?: string;
 }
 
+export interface TeamMember {
+  id: string;
+  name: string;
+  crmv?: string;
+}
+
 export interface AuthResponse {
   access_token: string;
   user: User;

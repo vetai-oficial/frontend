@@ -1,4 +1,4 @@
-import type { Specie } from '@/types/patient';
+import type { Sex, Specie } from '@/types/patient';
 
 export const SPECIE_LABELS: Record<Specie, string> = {
   DOG: 'Cão',
@@ -7,4 +7,9 @@ export const SPECIE_LABELS: Record<Specie, string> = {
   REPTILE: 'Réptil',
   HORSE: 'Cavalo',
   OTHER: 'Outro',
+};
+
+export const SEX_LABELS: Record<Sex, string> = {
+  MALE: 'Macho',
+  FEMALE: 'Fêmea',
 };

@@ -6,6 +6,7 @@ import { AuthGuard } from '@/app/components/auth-guard';
 import { Sidebar } from '@/app/components/sidebar';
 import '@/app/globals.css';
 import { TooltipProvider } from '@/components/ui/tooltip';
+import { AuthProvider } from '@/infra/auth-context';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -32,16 +33,18 @@ export default function PrivateLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-gray-50 dark:bg-slate-900`}
       >
-        <AuthGuard>
-          <TooltipProvider>
-            <div className='flex h-screen overflow-hidden'>
-              <Sidebar />
-              <main className='flex-1 overflow-y-auto p-6 bg-gray-50 dark:bg-slate-900'>
-                {children}
-              </main>
-            </div>
-          </TooltipProvider>
-        </AuthGuard>
+        <AuthProvider>
+          <AuthGuard>
+            <TooltipProvider>
+              <div className='flex h-screen overflow-hidden'>
+                <Sidebar />
+                <main className='flex-1 overflow-y-auto p-6 bg-gray-50 dark:bg-slate-900'>
+                  {children}
+                </main>
+              </div>
+            </TooltipProvider>
+          </AuthGuard>
+        </AuthProvider>
         <Toaster position='top-right' richColors />
       </body>
     </html>

@@ -1,6 +1,7 @@
 export interface Tutor {
   id: string;
   name: string;
+  record_number?: number;
   cpf: string;
   phone?: string;
   email?: string;

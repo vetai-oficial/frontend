@@ -4,6 +4,8 @@ export type Sex = 'MALE' | 'FEMALE';
 export interface Patient {
   id: string;
   name: string;
+  record_number?: number;
+  observations?: string;
   specie: Specie;
   breed?: string;
   birth_date?: string;
@@ -18,6 +20,7 @@ export interface Patient {
 
 export interface CreatePatientPayload {
   name: string;
+  observations?: string;
   specie: Specie;
   breed?: string;
   birth_date?: string;
@@ -30,6 +33,7 @@ export interface CreatePatientPayload {
 
 export interface UpdatePatientPayload {
   name?: string;
+  observations?: string;
   specie?: Specie;
   breed?: string;
   birth_date?: string;

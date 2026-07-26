@@ -55,12 +55,19 @@ export interface PrescriptionMetadata {
   medications: PrescriptionMedication[];
 }
 
+export interface RecordAuthor {
+  id?: string;
+  name: string;
+  crmv?: string;
+}
+
 export interface HealthRecord {
   id: string;
   type: HealthRecordType;
   date: string;
   notes?: string;
   metadata: WeightMetadata | VaccineMetadata | ClinicalNoteMetadata | NoteMetadata | Record<string, unknown>;
+  recorded_by?: RecordAuthor;
   created_at: string;
 }
 

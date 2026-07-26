@@ -22,6 +22,8 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useState } from 'react';
 
+import { NotificationBell } from './notification-bell';
+
 import { STORAGE_KEYS } from '@/constants';
 import { removeToken } from '@/infra/http-client';
 
@@ -46,7 +48,7 @@ export function Sidebar() {
     { href: '/schedule', icon: CalendarDays, label: 'Agendamentos' },
     { href: '/payments', icon: CreditCard, label: 'Pagamentos' },
     { href: '/catalog', icon: BookOpen, label: 'Catálogo' },
-    { href: '/monitoring', icon: SquareActivity, label: 'Monitoramento' },
+    { href: '/monitoring', icon: SquareActivity, label: 'Internação' },
     { href: '/consultation', icon: MessageCircleQuestionMark, label: 'Consulta' },
     { href: '/settings', icon: Settings, label: 'Configurações' },
   ];
@@ -55,7 +57,7 @@ export function Sidebar() {
     <>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="md:hidden fixed top-4 left-4 z-50 p-2 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-lg"
+        className="md:hidden print:hidden fixed top-4 left-4 z-50 p-2 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-lg"
       >
         {isOpen ? <X size={24} className="text-slate-900 dark:text-white" /> : <Menu size={24} className="text-slate-900 dark:text-white" />}
       </button>
@@ -67,12 +69,15 @@ export function Sidebar() {
         />
       )}
 
-      <aside className={`fixed md:relative w-64 flex-col border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 h-full z-40 transition-transform duration-300 ${
+      <aside className={`fixed md:relative print:hidden w-64 flex-col border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 h-full z-40 transition-transform duration-300 ${
         isOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
       } md:flex`}>
-        <div className="h-16 flex items-center px-6 border-b border-slate-200 dark:border-slate-800">
-          <Activity className="text-teal-600 mr-2" />
-          <span className="font-bold text-lg tracking-tight">VetAI</span>
+        <div className="h-16 flex items-center justify-between px-6 border-b border-slate-200 dark:border-slate-800">
+          <div className="flex items-center">
+            <Activity className="text-teal-600 mr-2" />
+            <span className="font-bold text-lg tracking-tight">VetAI</span>
+          </div>
+          <NotificationBell />
         </div>
         <nav className="flex-1 p-4 space-y-2">
           {menuItems.map((item) => {
