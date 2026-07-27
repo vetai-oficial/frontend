@@ -29,18 +29,17 @@ import {
 } from '@/constants';
 import { usePaginatedResource } from '@/hooks/use-paginated-resource';
 import { authService } from '@/services/auth.service';
-import { collaboratorsService } from '@/services/collaborators.service';
 import {
   monitoringService,
   type HospitalizationListParams,
 } from '@/services/monitoring.service';
+import type { TeamMember } from '@/types/auth';
 import type { PaginatedQueryParams } from '@/types/common';
 import type {
   Box,
   Hospitalization,
   MonitoringSummary,
 } from '@/types/monitoring';
-import type { Collaborator } from '@/types/settings';
 
 const SPECIE_ICONS: Record<string, typeof PawPrint> = {
   DOG: Dog,
@@ -69,7 +68,7 @@ export function HospitalizedTab() {
   const [summary, setSummary] = useState<MonitoringSummary | null>(null);
   const [summaryLoading, setSummaryLoading] = useState(true);
   const [showHospitalize, setShowHospitalize] = useState(false);
-  const [vets, setVets] = useState<Collaborator[]>([]);
+  const [vets, setVets] = useState<TeamMember[]>([]);
   const [boxes, setBoxes] = useState<Box[]>([]);
 
   const fetchHospitalizations = useCallback(
@@ -117,25 +116,10 @@ export function HospitalizedTab() {
 
   useEffect(() => {
     void fetchSummary();
-    void Promise.all([
-      authService.me().catch(() => null),
-      collaboratorsService.findAll().catch(() => [] as Collaborator[]),
-    ]).then(([me, collaborators]) => {
-      const list = collaborators.filter(
-        (c) => c.status === 'active' && c.name,
-      );
-      if (me && !list.some((c) => c.id === me.id)) {
-        list.unshift({
-          id: me.id,
-          name: me.name,
-          email: me.email,
-          role: me.role,
-          status: 'active',
-          addedAt: new Date().toISOString(),
-        });
-      }
-      setVets(list);
-    });
+    void authService
+      .listTeam()
+      .then(setVets)
+      .catch(() => undefined);
     void monitoringService
       .listBoxes()
       .then(setBoxes)

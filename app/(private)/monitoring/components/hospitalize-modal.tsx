@@ -17,11 +17,10 @@ import {
   type HospitalizeFormData,
 } from '@/schemas/monitoring';
 import { authService } from '@/services/auth.service';
-import { collaboratorsService } from '@/services/collaborators.service';
 import { monitoringService } from '@/services/monitoring.service';
 import { patientsService } from '@/services/patients.service';
+import type { TeamMember } from '@/types/auth';
 import type { Box, Hospitalization } from '@/types/monitoring';
-import type { Collaborator } from '@/types/settings';
 
 interface HospitalizeModalProps {
   hospitalization?: Hospitalization;
@@ -37,7 +36,7 @@ export function HospitalizeModal({
   const isEdit = Boolean(hospitalization);
   const [saving, setSaving] = useState(false);
 
-  const [vets, setVets] = useState<Collaborator[]>([]);
+  const [vets, setVets] = useState<TeamMember[]>([]);
   const [boxes, setBoxes] = useState<Box[]>([]);
 
   const [patientSearch, setPatientSearch] = useState('');
@@ -89,25 +88,10 @@ export function HospitalizeModal({
   );
 
   useEffect(() => {
-    void Promise.all([
-      authService.me().catch(() => null),
-      collaboratorsService.findAll().catch(() => [] as Collaborator[]),
-    ]).then(([me, collaborators]) => {
-      const list = collaborators.filter(
-        (c) => c.status === 'active' && c.name,
-      );
-      if (me && !list.some((c) => c.id === me.id)) {
-        list.unshift({
-          id: me.id,
-          name: me.name,
-          email: me.email,
-          role: me.role,
-          status: 'active',
-          addedAt: new Date().toISOString(),
-        });
-      }
-      setVets(list);
-    });
+    void authService
+      .listTeam()
+      .then(setVets)
+      .catch(() => undefined);
     void monitoringService
       .listBoxes()
       .then(setBoxes)
