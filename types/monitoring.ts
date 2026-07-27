@@ -7,6 +7,8 @@ export type HospitalizationStatus =
 
 export type HospitalizationRisk = 'LOW' | 'MEDIUM' | 'HIGH';
 
+export type ClinicalStatus = 'STABLE' | 'UNSTABLE' | 'AWAITING_TUTOR';
+
 export type PrescriptionType = 'MEDICATION' | 'PROCEDURE' | 'FLUID';
 
 export type PrescriptionFrequency = 'RECURRING' | 'ONCE' | 'AS_NEEDED';
@@ -50,10 +52,41 @@ export interface BoxMini {
   name: string;
 }
 
+export interface UserSummary {
+  id?: string;
+  name: string;
+  crmv?: string;
+}
+
+export interface VitalRecord {
+  id: string;
+  measured_at: string;
+  heart_rate?: number;
+  respiratory_rate?: number;
+  rectal_temperature?: number;
+  blood_pressure?: number;
+  glucose?: number;
+  capillary_refill_time?: number;
+  notes?: string;
+  recorded_by?: UserSummary;
+  created_at: string;
+}
+
+export interface CreateVitalRecordPayload {
+  heart_rate?: number;
+  respiratory_rate?: number;
+  rectal_temperature?: number;
+  blood_pressure?: number;
+  glucose?: number;
+  capillary_refill_time?: number;
+  notes?: string;
+}
+
 export interface Hospitalization {
   id: string;
   patient: PatientMini;
   status: HospitalizationStatus;
+  clinical_status?: ClinicalStatus;
   risk: HospitalizationRisk;
   veterinarian: UserMini;
   box?: BoxMini;
@@ -67,6 +100,9 @@ export interface Hospitalization {
   observations?: string;
   discharged_at?: string;
   discharge_notes?: string;
+  weight_kg?: number;
+  monitoring_interval_minutes: number;
+  latest_vitals?: VitalRecord | null;
   created_at: string;
   updated_at: string;
 }
@@ -74,6 +110,7 @@ export interface Hospitalization {
 export interface CreateHospitalizationPayload {
   patient_id: string;
   status: 'TRIAGE' | 'HOSPITALIZED';
+  clinical_status?: ClinicalStatus;
   risk: HospitalizationRisk;
   veterinarian_id: string;
   box_id?: string;
@@ -84,6 +121,8 @@ export interface CreateHospitalizationPayload {
   allergies?: string[];
   accessories?: string;
   observations?: string;
+  weight_kg?: number;
+  monitoring_interval_minutes?: number;
 }
 
 export type UpdateHospitalizationPayload = Partial<
