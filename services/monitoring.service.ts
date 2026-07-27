@@ -6,6 +6,7 @@ import type {
   CreateEventPayload,
   CreateHospitalizationPayload,
   CreatePrescriptionPayload,
+  CreateVitalRecordPayload,
   Execution,
   Hospitalization,
   HospitalizationEvent,
@@ -16,6 +17,7 @@ import type {
   PrescriptionTemplate,
   TemplateItem,
   UpdateHospitalizationPayload,
+  VitalRecord,
 } from '@/types/monitoring';
 
 export interface HospitalizationListParams extends QueryParams {
@@ -186,6 +188,20 @@ export const monitoringService = {
   createEvent: (hospitalizationId: string, data: CreateEventPayload) =>
     httpClient<HospitalizationEvent>(
       `monitoring/hospitalizations/${hospitalizationId}/events`,
+      { method: 'POST', body: JSON.stringify(data) },
+    ),
+
+  listVitals: (hospitalizationId: string) =>
+    httpClient<VitalRecord[]>(
+      `monitoring/hospitalizations/${hospitalizationId}/vitals`,
+    ),
+
+  createVital: (
+    hospitalizationId: string,
+    data: CreateVitalRecordPayload,
+  ) =>
+    httpClient<VitalRecord>(
+      `monitoring/hospitalizations/${hospitalizationId}/vitals`,
       { method: 'POST', body: JSON.stringify(data) },
     ),
 

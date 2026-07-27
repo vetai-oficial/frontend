@@ -13,6 +13,14 @@ export const hospitalizeSchema = yup.object({
     .mixed<'LOW' | 'MEDIUM' | 'HIGH'>()
     .oneOf(['LOW', 'MEDIUM', 'HIGH'], 'Risco inválido')
     .required('Risco é obrigatório'),
+  clinical_status: yup
+    .mixed<'STABLE' | 'UNSTABLE' | 'AWAITING_TUTOR'>()
+    .oneOf(
+      ['STABLE', 'UNSTABLE', 'AWAITING_TUTOR'],
+      'Estado clínico inválido',
+    )
+    .optional(),
+  monitoring_interval_minutes: yup.string().optional(),
   veterinarian_id: yup.string().required('Veterinário é obrigatório'),
   box_id: yup.string().optional(),
   expected_discharge_date: yup

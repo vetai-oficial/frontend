@@ -22,6 +22,11 @@ import { SummaryCards } from './summary-cards';
 
 import { SelectInput } from '@/app/components/forms/select-input';
 import { Button } from '@/components/ui/button';
+import {
+  CLINICAL_STATUS_CLASSES,
+  CLINICAL_STATUS_LABELS,
+  evaluateCadence,
+} from '@/constants';
 import { usePaginatedResource } from '@/hooks/use-paginated-resource';
 import { authService } from '@/services/auth.service';
 import { collaboratorsService } from '@/services/collaborators.service';
@@ -42,6 +47,13 @@ const SPECIE_ICONS: Record<string, typeof PawPrint> = {
   CAT: Cat,
   BIRD: Bird,
 };
+
+function cadenceFor(hospitalization: Hospitalization) {
+  return evaluateCadence(
+    hospitalization.monitoring_interval_minutes,
+    hospitalization.latest_vitals?.measured_at,
+  );
+}
 
 interface Filters {
   search?: string;
@@ -280,6 +292,18 @@ export function HospitalizedTab() {
                     <span className={`px-2 py-0.5 rounded-full text-[11px] font-semibold ${risk.badge}`}>
                       {risk.label}
                     </span>
+                    {hospitalization.clinical_status && (
+                      <span
+                        className={`px-2 py-0.5 rounded-full text-[11px] font-semibold ${CLINICAL_STATUS_CLASSES[hospitalization.clinical_status]}`}
+                      >
+                        {CLINICAL_STATUS_LABELS[hospitalization.clinical_status]}
+                      </span>
+                    )}
+                    {cadenceFor(hospitalization)?.overdue && (
+                      <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400">
+                        Aferição atrasada
+                      </span>
+                    )}
                   </div>
 
                   <div className="space-y-1.5 text-xs text-slate-600 dark:text-slate-300">
