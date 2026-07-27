@@ -40,6 +40,10 @@ import {
   ParametersModal,
   WeightModal,
 } from '../../components/quick-add-modals';
+import { VitalHistoryTable } from '../../components/vital-history-table';
+import { VitalSignsModal } from '../../components/vital-signs-modal';
+import { VitalSummaryCards } from '../../components/vital-summary-cards';
+import { VitalsChart } from '../../components/vitals-chart';
 import {
   daysSince,
   doseLabel,
@@ -63,6 +67,11 @@ import { InputWithLabel } from '@/app/components/forms/input-with-label';
 import { SelectInput } from '@/app/components/forms/select-input';
 import { TimeInput } from '@/app/components/forms/time-input';
 import { Button } from '@/components/ui/button';
+import {
+  evaluateCadence,
+  formatVitalDuration,
+  VITAL_DEFINITIONS,
+} from '@/constants';
 import { dischargeSchema, type DischargeFormData } from '@/schemas/monitoring';
 import { monitoringService } from '@/services/monitoring.service';
 import type {
@@ -71,7 +80,9 @@ import type {
   Hospitalization,
   HospitalizationEvent,
   HospPrescription,
+  VitalRecord,
 } from '@/types/monitoring';
+import type { Specie } from '@/types/patient';
 
 type CloseAction = 'discharge' | 'decease' | 'cancel';
 
@@ -401,6 +412,10 @@ export function HospitalizationDetailContent() {
 
   const [quickAdd, setQuickAdd] = useState<'occurrence' | 'weight' | 'parameters' | null>(null);
 
+  const [vitals, setVitals] = useState<VitalRecord[]>([]);
+  const [vitalsLoading, setVitalsLoading] = useState(false);
+  const [showVitalsModal, setShowVitalsModal] = useState(false);
+
   const fetchHospitalization = useCallback(async () => {
     if (!id) return;
     setLoading(true);
@@ -437,11 +452,22 @@ export function HospitalizationDetailContent() {
     }
   }, [id]);
 
+  const fetchVitals = useCallback(async () => {
+    if (!id) return;
+    setVitalsLoading(true);
+    try {
+      setVitals(await monitoringService.listVitals(id));
+    } finally {
+      setVitalsLoading(false);
+    }
+  }, [id]);
+
   useEffect(() => {
     void fetchHospitalization();
     void fetchPrescriptions();
     void fetchTimeline();
-  }, [fetchHospitalization, fetchPrescriptions, fetchTimeline]);
+    void fetchVitals();
+  }, [fetchHospitalization, fetchPrescriptions, fetchTimeline, fetchVitals]);
 
   const executionStats = useMemo(() => {
     const stats = new Map<
@@ -569,10 +595,18 @@ export function HospitalizationDetailContent() {
   const status = STATUS_MAP[hospitalization.status];
   const risk = RISK_MAP[hospitalization.risk];
 
+  const patientSpecie = (hospitalization.patient?.specie ?? 'DOG') as Specie;
+  const lastVital = vitals.length > 0 ? vitals[vitals.length - 1] : undefined;
+  const cadence = evaluateCadence(
+    hospitalization.monitoring_interval_minutes,
+    lastVital?.measured_at,
+  );
+
   const refreshAll = () => {
     void fetchHospitalization();
     void fetchPrescriptions();
     void fetchTimeline();
+    void fetchVitals();
   };
 
   const handleReopen = async () => {
@@ -781,6 +815,54 @@ export function HospitalizationDetailContent() {
           </div>
         )}
       </div>
+
+      <SectionCard
+        title="Sinais Vitais"
+        subtitle={
+          cadence?.overdue
+            ? cadence.neverMeasured
+              ? 'Nenhuma aferição registrada desde a admissão'
+              : `Aferição atrasada há ${formatVitalDuration(-(cadence.minutesUntilDue ?? 0))}`
+            : 'Aferições da internação, com faixas de referência por espécie'
+        }
+        headerAction={
+          isActive ? (
+            <Button
+              size="sm"
+              onClick={() => setShowVitalsModal(true)}
+              className="bg-teal-600 dark:bg-teal-700 text-white hover:bg-teal-700"
+            >
+              <Plus size={14} />
+              Aferição
+            </Button>
+          ) : undefined
+        }
+      >
+        {vitalsLoading ? (
+          <div className="flex justify-center py-8">
+            <Loader2 className="animate-spin text-teal-600" size={24} />
+          </div>
+        ) : (
+          <div className="space-y-4">
+            <VitalSummaryCards specie={patientSpecie} records={vitals} />
+
+            {vitals.length > 0 && (
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+                {VITAL_DEFINITIONS.map((definition) => (
+                  <VitalsChart
+                    key={definition.key}
+                    specie={patientSpecie}
+                    definition={definition}
+                    records={vitals}
+                  />
+                ))}
+              </div>
+            )}
+
+            <VitalHistoryTable specie={patientSpecie} records={vitals} />
+          </div>
+        )}
+      </SectionCard>
 
       <SectionCard
         title="Prescrição Médica"
@@ -1033,6 +1115,18 @@ export function HospitalizationDetailContent() {
           loading={reopenLoading}
           onConfirm={() => void handleReopen()}
           onClose={() => setShowReopen(false)}
+        />
+      )}
+      {showVitalsModal && (
+        <VitalSignsModal
+          hospitalizationId={hospitalization.id}
+          specie={patientSpecie}
+          onClose={() => setShowVitalsModal(false)}
+          onSuccess={() => {
+            setShowVitalsModal(false);
+            void fetchVitals();
+            void fetchTimeline();
+          }}
         />
       )}
       {showPrescription && (

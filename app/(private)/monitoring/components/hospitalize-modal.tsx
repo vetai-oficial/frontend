@@ -11,6 +11,7 @@ import { InputWithLabel } from '@/app/components/forms/input-with-label';
 import { SearchSelect } from '@/app/components/forms/search-select';
 import { SelectInput } from '@/app/components/forms/select-input';
 import { Button } from '@/components/ui/button';
+import { MONITORING_INTERVAL_OPTIONS } from '@/constants';
 import {
   hospitalizeSchema,
   type HospitalizeFormData,
@@ -66,6 +67,10 @@ export function HospitalizeModal({
       status:
         hospitalization?.status === 'TRIAGE' ? 'TRIAGE' : hospitalization ? 'HOSPITALIZED' : 'TRIAGE',
       risk: hospitalization?.risk ?? 'LOW',
+      clinical_status: hospitalization?.clinical_status,
+      monitoring_interval_minutes: String(
+        hospitalization?.monitoring_interval_minutes ?? 240,
+      ),
       veterinarian_id: hospitalization?.veterinarian?.id ?? '',
       box_id: hospitalization?.box?.id ?? '',
       expected_discharge_date: hospitalization?.expected_discharge_at
@@ -165,6 +170,16 @@ export function HospitalizeModal({
       const payload = {
         status: data.status,
         risk: data.risk,
+        ...(data.clinical_status
+          ? { clinical_status: data.clinical_status }
+          : {}),
+        ...(data.monitoring_interval_minutes !== undefined
+          ? {
+            monitoring_interval_minutes: Number(
+              data.monitoring_interval_minutes,
+            ),
+          }
+          : {}),
         veterinarian_id: data.veterinarian_id,
         ...(data.box_id ? { box_id: data.box_id } : {}),
         ...(data.expected_discharge_date
@@ -279,6 +294,40 @@ export function HospitalizeModal({
                 value={field.value ?? ''}
                 onChange={field.onChange}
                 error={errors.expected_discharge_date?.message}
+              />
+            )}
+          />
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <Controller
+            name="clinical_status"
+            control={control}
+            render={({ field }) => (
+              <SelectInput
+                label="Estado clínico"
+                value={field.value ?? ''}
+                onChange={field.onChange}
+                placeholder="Não avaliado"
+                options={[
+                  { value: 'STABLE', label: 'Estável' },
+                  { value: 'UNSTABLE', label: 'Instável' },
+                  { value: 'AWAITING_TUTOR', label: 'Aguardando tutor' },
+                ]}
+                error={errors.clinical_status?.message}
+              />
+            )}
+          />
+          <Controller
+            name="monitoring_interval_minutes"
+            control={control}
+            render={({ field }) => (
+              <SelectInput
+                label="Lembrete de aferição"
+                value={field.value ?? '240'}
+                onChange={field.onChange}
+                options={MONITORING_INTERVAL_OPTIONS}
+                error={errors.monitoring_interval_minutes?.message}
               />
             )}
           />
